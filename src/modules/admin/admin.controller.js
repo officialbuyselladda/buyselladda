@@ -1,0 +1,90 @@
+import asyncHandler from '../../utils/asyncHandler.js';
+import sendResponse from '../../utils/responseHandler.js';
+import adminService from './admin.service.js';
+import dashboardService from './dashboard.service.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation } from './admin.validation.js';
+
+const getDashboard = asyncHandler(async (req, res) => {
+  const stats = await dashboardService.getDashboardStats();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Dashboard stats',
+    data: stats,
+  });
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+  const { error } = deleteUserValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  await adminService.deleteUser(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User deleted',
+  });
+});
+
+const deleteProduct = asyncHandler(async (req, res) => {
+  const { error } = deleteProductValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  await adminService.deleteProduct(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Product deleted',
+  });
+});
+
+const approveProduct = asyncHandler(async (req, res) => {
+  const { error } = approveProductValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  await adminService.approveProduct(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Product approved',
+  });
+});
+
+const rejectProduct = asyncHandler(async (req, res) => {
+  const { error } = rejectProductValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  await adminService.rejectProduct(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Product rejected',
+  });
+});
+
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct };
+

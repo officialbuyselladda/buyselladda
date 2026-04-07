@@ -1,0 +1,52 @@
+import asyncHandler from '../../utils/asyncHandler.js';
+import sendResponse from '../../utils/responseHandler.js';
+import chatService from './chat.service.js';
+import { io } from '../../config/socket.js';
+
+const createChat = asyncHandler(async (req, res) => {
+  const { otherUserId } = req.body;
+  const participants = [req.user._id, otherUserId];
+  const chat = await chatService.createChat(participants);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'Chat created or found',
+    data: chat,
+  });
+});
+
+const getChats = asyncHandler(async (req, res) => {
+  const chats = await chatService.getUserChats(req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Chats fetched',
+    data: chats,
+  });
+});
+
+const getMessages = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+  const messages = await chatService.getMessages(chatId, req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Messages fetched',
+    data: messages,
+  });
+});
+
+const sendMessage = asyncHandler(async (req, res) => {
+  const { chatId, text, image } = req.body;
+  const message = await chatService.sendMessage(chatId, req.user._id, { text, image });
+  io.to(chatId).emit('message', message);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'Message sent',
+    data: message,
+  });
+});
+
+export { createChat, getChats, getMessages, sendMessage };
+
