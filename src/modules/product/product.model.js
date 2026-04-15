@@ -32,6 +32,14 @@ const productSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  locationCoords: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: [Number]  // [lng, lat]
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -46,12 +54,20 @@ const productSchema = mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'suspicious'],
     default: 'pending',
   },
+  slug: {
+    type: String,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    index: true
+  },
 }, { timestamps: true });
 
 productSchema.index({ title: 'text', description: 'text' });
 productSchema.index({ category: 1, status: 1, createdAt: -1 });
+productSchema.index({ locationCoords: '2dsphere' });
+
 
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;
-

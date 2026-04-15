@@ -52,5 +52,15 @@ const deleteProduct = asyncHandler(async (req, res) => {
   });
 });
 
-export { createProduct, getProducts, getProduct, updateProduct, deleteProduct };
+const getMyProducts = asyncHandler(async (req, res) => {
+  const myProducts = await productService.getMyProducts(req.user._id, req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Your products fetched',
+    data: myProducts,
+  });
+});
+
+export { createProduct, getProducts, getProduct, updateProduct, deleteProduct, getMyProducts };
 

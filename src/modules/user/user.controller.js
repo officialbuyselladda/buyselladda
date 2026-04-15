@@ -22,5 +22,15 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-export { getMe, updateProfile };
+const getProfileStats = asyncHandler(async (req, res) => {
+  const stats = await userService.getProfileStats(req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Profile stats fetched',
+    data: stats,
+  });
+});
+
+export { getMe, updateProfile, getProfileStats };
 

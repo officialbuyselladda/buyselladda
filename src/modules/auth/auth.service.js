@@ -23,13 +23,20 @@ const register = async (userData) => {
 };
 
 const login = async ({ email, password }) => {
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  if (!password) {
+    throw new Error('Password required');
+  }
+  const user = await User.findOne({ email }).select('+password');
+  if (!user || !user.password) {
+    throw new Error('Invalid credentials');
+  }
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
     throw new Error('Invalid credentials');
   }
 
   const token = generateToken(user._id);
-  return { user, token };
+  return { user: user.toObject({ versionKey: false }), token };
 };
 
 export default { register, login };

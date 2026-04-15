@@ -16,7 +16,14 @@ const server = app.listen(PORT, () => {
 initSocket(server);
 
 process.on('unhandledRejection', (err) => {
-  console.log('Unhandled Rejection! Shutting down server...');
-  server.close(() => process.exit(1));
+  console.log('Unhandled Rejection!', err.name || err.message);
+  console.error('Full error:', err.stack);
+  // Continue running - fixed crash issue
+});
+
+// Add uncaughtException handler too
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception!', err.stack);
+  // Continue running
 });
 

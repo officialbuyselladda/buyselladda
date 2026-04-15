@@ -1,5 +1,7 @@
 import Product from './product.model.js';
 import User from '../user/user.model.js';
+import templates from '../../utils/emailTemplates.js';
+import sendEmail from '../../config/email.js';
 
 const bannedWords = ['spam', 'scam', 'free', 'hack', 'viagra']; // Add more
 
@@ -56,21 +58,76 @@ const getProducts = async (query) => {
   const limit = parseInt(query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const filter = { status: 'approved' };
-  if (query.category) filter.category = query.category;
-  if (query.location) filter.location = { $regex: query.location, $options: 'i' };
-  if (query.search) filter.$or = [
-    { title: { $regex: query.search, $options: 'i' } },
-    { description: { $regex: query.search, $options: 'i' } },
-  ];
+  const lat = parseFloat(query.lat);
+  const lng = parseFloat(query.lng);
+  const radius = (parseFloat(query.radius) || 10) * 1000; // meters
 
-  const products = await Product.find(filter)
-    .populate('user', 'name avatar')
-    .sort('-createdAt')
-    .skip(skip)
-    .limit(limit);
+  let products;
+  let total;
 
-  const total = await Product.countDocuments(filter);
+  if (!isNaN(lat) && !isNaN(lng)) {
+    // Geospatial
+    const pipeline = [
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [lng, lat] },
+          distanceField: 'dist.calculated',
+          maxDistance: radius,
+          spherical: true
+        }
+      },
+      {
+        $match: {
+          status: 'approved',
+          ...(query.category && { category: query.category }),
+          ...(query.search && {
+            $or: [
+              { title: { $regex: query.search, $options: 'i' } },
+              { description: { $regex: query.search, $options: 'i' } }
+            ]
+          })
+        }
+      },
+      { $sort: { 'dist.calculated': 1, createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+          pipeline: [{ $project: { name: 1, avatar: 1 } }]
+        }
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }
+    ];
+    products = await Product.aggregate(pipeline);
+
+    const countPipeline = pipeline.slice(0, 2);
+    const countResult = await Product.aggregate([
+      ...countPipeline,
+      { $count: 'total' }
+    ]);
+    total = countResult[0]?.total || 0;
+  } else {
+    // Fallback text filter
+    const filter = { status: 'approved' };
+    if (query.category) filter.category = query.category;
+    if (query.location) filter.location = { $regex: query.location, $options: 'i' };
+    if (query.search) filter.$or = [
+      { title: { $regex: query.search, $options: 'i' } },
+      { description: { $regex: query.search, $options: 'i' } }
+    ];
+
+    products = await Product.find(filter)
+      .populate('user', 'name avatar')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limit);
+
+    total = await Product.countDocuments(filter);
+  }
 
   return {
     products,
@@ -104,5 +161,32 @@ const deleteProduct = async (id, userId) => {
   if (!product) throw new Error('Product not found');
 };
 
-export default { createProduct, getProducts, getProduct, updateProduct, deleteProduct };
+const getMyProducts = async (userId, query = {}) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = { user: userId };
+  if (query.status) filter.status = query.status;
+
+  const products = await Product.find(filter)
+    .populate('user', 'name avatar')
+    .sort('-createdAt')
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Product.countDocuments(filter);
+
+  return {
+    data: products,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
+};
+
+export default { createProduct, getProducts, getProduct, updateProduct, deleteProduct, getMyProducts };
 
