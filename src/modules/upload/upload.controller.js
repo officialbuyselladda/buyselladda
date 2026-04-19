@@ -11,13 +11,27 @@ const uploadImage = asyncHandler(async (req, res) => {
     });
   }
 
-  const result = await uploadService.uploadImage(req.file.buffer, req.file.originalname);
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: 'Image uploaded',
-    data: result,
-  });
+  try {
+    const result = await uploadService.uploadImage(req.file.buffer, req.file.originalname);
+    return sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: 'Image uploaded',
+      data: result,
+    });
+  } catch (error) {
+    if (error.code === 'IMAGE_MODERATION_REJECTED') {
+      return sendResponse(res, {
+        success: false,
+        statusCode: error.statusCode || 400,
+        message: error.message || 'Image rejected by moderation policy',
+        data: {
+          moderationStatus: error.moderationStatus || 'rejected',
+        },
+      });
+    }
+    throw error;
+  }
 });
 
 export { uploadImage };

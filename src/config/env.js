@@ -13,6 +13,13 @@ const envSchema = Joi.object({
   CLOUDINARY_API_KEY: Joi.string().required(),
   CLOUDINARY_API_SECRET: Joi.string().required(),
   GOOGLE_MAPS_API_KEY: Joi.string().default(''),
+
+  EMAIL_HOST: Joi.string().required(),
+  EMAIL_PORT: Joi.number().default(587),
+  EMAIL_SECURE: Joi.boolean().truthy('true').truthy('1').falsy('false').falsy('0').default(false),
+  EMAIL_USER: Joi.string().email().required(),
+  EMAIL_PASS: Joi.string().required(),
+  EMAIL_FROM: Joi.string().email().optional(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);

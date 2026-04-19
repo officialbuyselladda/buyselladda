@@ -49,6 +49,11 @@ const productSchema = mongoose.Schema({
     type: Number,
     default: 0,
   },
+  isBoosted: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected', 'suspicious'],
@@ -61,10 +66,28 @@ const productSchema = mongoose.Schema({
     trim: true,
     index: true
   },
+  contentHash: {
+    type: String,
+    index: true,
+  },
+  searchVector: [
+    {
+      term: {
+        type: String,
+      },
+      tfidf: {
+        type: Number,
+      },
+    },
+  ],
 }, { timestamps: true });
 
-productSchema.index({ title: 'text', description: 'text' });
+productSchema.index({ title: 'text', category: 1 });
 productSchema.index({ category: 1, status: 1, createdAt: -1 });
+productSchema.index({ category: 1, createdAt: -1 });
+productSchema.index({ user: 1, createdAt: -1 });
+productSchema.index({ isBoosted: -1, createdAt: -1, status: 1 });
+productSchema.index({ user: 1, contentHash: 1 }, { unique: true, sparse: true });
 productSchema.index({ locationCoords: '2dsphere' });
 
 

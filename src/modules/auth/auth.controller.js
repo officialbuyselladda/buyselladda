@@ -2,6 +2,8 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import authService from './auth.service.js';
 import sendResponse from '../../utils/responseHandler.js';
 import { registerValidation, loginValidation } from './auth.validation.js';
+import sendEmail from '../../config/email.js';
+import templates from '../../utils/emailTemplates.js';
 
 const register = asyncHandler(async (req, res) => {
   const { error } = registerValidation.validate(req.body);
@@ -43,5 +45,42 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login };
+const adminLogin = asyncHandler(async (req, res) => {
+  const { error } = loginValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const { user, token } = await authService.login(req.body);
+  
+  // Check if user is admin
+  if (user.role !== 'admin') {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 403,
+      message: 'Access denied. Admin credentials required.',
+    });
+  }
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Admin login successful',
+    data: { 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      }, 
+      token 
+    },
+  });
+});
+
+export { register, login, adminLogin };
 

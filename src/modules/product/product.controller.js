@@ -1,10 +1,33 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
-import productService from './product.service.js';
+import { 
+  createProduct, 
+  getProducts, 
+  getProduct, 
+  updateProduct, 
+  deleteProduct, 
+  getMyProducts, 
+  getRecommendations 
+} from './product.service.js';
+import {
+  createProductValidation,
+  updateProductValidation,
+  productIdParamValidation,
+  productListQueryValidation,
+  myProductsQueryValidation,
+  recommendationsQueryValidation,
+} from './product.validation.js';
 
-const createProduct = asyncHandler(async (req, res) => {
+const createProductHandler = asyncHandler(async (req, res) => {
+  const { error } = createProductValidation.validate(req.body);
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
   req.body.user = req.user._id;
-  const product = await productService.createProduct(req.body);
+  const product = await createProduct(req.body);
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -13,8 +36,15 @@ const createProduct = asyncHandler(async (req, res) => {
   });
 });
 
-const getProducts = asyncHandler(async (req, res) => {
-  const products = await productService.getProducts(req.query);
+const getProductsHandler = asyncHandler(async (req, res) => {
+  const { error } = productListQueryValidation.validate(req.query);
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const products = await getProducts(req.query);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -23,8 +53,15 @@ const getProducts = asyncHandler(async (req, res) => {
   });
 });
 
-const getProduct = asyncHandler(async (req, res) => {
-  const product = await productService.getProduct(req.params.id);
+const getProductHandler = asyncHandler(async (req, res) => {
+  const { error } = productIdParamValidation.validate({ id: req.params.id });
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const product = await getProduct(req.params.id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -33,8 +70,22 @@ const getProduct = asyncHandler(async (req, res) => {
   });
 });
 
-const updateProduct = asyncHandler(async (req, res) => {
-  const product = await productService.updateProduct(req.params.id, req.body, req.user._id);
+const updateProductHandler = asyncHandler(async (req, res) => {
+  const paramValidation = productIdParamValidation.validate({ id: req.params.id });
+  if (paramValidation.error) {
+    const err = new Error(paramValidation.error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const bodyValidation = updateProductValidation.validate(req.body);
+  if (bodyValidation.error) {
+    const err = new Error(bodyValidation.error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const product = await updateProduct(req.params.id, req.body, req.user._id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -43,8 +94,15 @@ const updateProduct = asyncHandler(async (req, res) => {
   });
 });
 
-const deleteProduct = asyncHandler(async (req, res) => {
-  await productService.deleteProduct(req.params.id, req.user._id);
+const deleteProductHandler = asyncHandler(async (req, res) => {
+  const { error } = productIdParamValidation.validate({ id: req.params.id });
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  await deleteProduct(req.params.id, req.user._id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -52,8 +110,15 @@ const deleteProduct = asyncHandler(async (req, res) => {
   });
 });
 
-const getMyProducts = asyncHandler(async (req, res) => {
-  const myProducts = await productService.getMyProducts(req.user._id, req.query);
+const getMyProductsHandler = asyncHandler(async (req, res) => {
+  const { error } = myProductsQueryValidation.validate(req.query);
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const myProducts = await getMyProducts(req.user._id, req.query);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -62,5 +127,30 @@ const getMyProducts = asyncHandler(async (req, res) => {
   });
 });
 
-export { createProduct, getProducts, getProduct, updateProduct, deleteProduct, getMyProducts };
+const getRecommendationsHandler = asyncHandler(async (req, res) => {
+  const { error } = recommendationsQueryValidation.validate(req.query);
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const recommendations = await getRecommendations(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Recommendations fetched' + (req.query.similarTo ? ' using DSA Cosine Similarity' : ''),
+    data: recommendations,
+  });
+});
+
+export { 
+  createProductHandler as createProduct, 
+  getProductsHandler as getProducts, 
+  getProductHandler as getProduct, 
+  updateProductHandler as updateProduct, 
+  deleteProductHandler as deleteProduct, 
+  getMyProductsHandler as getMyProducts, 
+  getRecommendationsHandler as getRecommendations 
+};
 

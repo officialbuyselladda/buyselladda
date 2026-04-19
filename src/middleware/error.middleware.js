@@ -6,31 +6,27 @@ const errorHandler = (err, req, res, next) => {
   console.error('Original:', err.originalError || 'N/A');
   console.error('====================');
 
-  let error = { ...err };
-  error.message = err.message;
+  let statusCode = err.statusCode || 500;
+  let message = 'Something went wrong';
 
+  // Known operational errors
   if (err.name === 'CastError') {
-    const castError = {
-      success: false,
-      statusCode: 404,
-      message: 'Resource not found',
-    };
-    res.status(castError.statusCode).json(castError);
-    return;
-  }
-
-  // Handle ValidationError, JsonWebTokenError, etc.
-  if (err.name === 'ValidationError') {
-    error.message = 'Validation failed';
-    error.statusCode = 400;
+    statusCode = 404;
+    message = 'Resource not found';
+  } else if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation failed';
   } else if (err.name === 'JsonWebTokenError') {
-    error.message = 'Invalid token';
-    error.statusCode = 401;
+    statusCode = 401;
+    message = 'Invalid token';
+  } else if (statusCode < 500 && err.message) {
+    // Preserve safe business messages for 4xx errors
+    message = err.message;
   }
 
-  res.status(error.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Server Error',
+    message,
   });
 };
 

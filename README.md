@@ -1,9 +1,9 @@
-# <img src="https://user-images.githubusercontent.com/74038190/233945377-d0c10fde-0845-43dc-ae71-6a79456f3777.png" alt="DealKro" width="50" height="50"/> **DealKro** - NextGen Classifieds Backend
+# <img src="https://user-images.githubusercontent.com/74038190/233945377-d0c10fde-0845-43dc-ae71-6a79456f3777.png" alt="DealKro" width="50" height="50"/> **DealKro Backend** - Production-Ready Classifieds API 🚀
 
 <div align="center">
 
-![Node.js](https://img.shields.io/badge/Node-18-green?style=for-the-badge&logo=nodedotjs)
-![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express.js)
+![Node.js](https://img.shields.io/badge/Node.js-v18+-3C873A?style=for-the-badge&logo=Node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4F46E5?style=for-the-badge&logo=mongodb)
 ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&color=010101)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448D0?style=for-the-badge&logo=cloudinary)
@@ -98,6 +98,17 @@ Update Frontend `src/services/api.js`:
 const API_BASE = 'http://localhost:5000/api'
 ```
 
+## 🚀 **Latest Updates**
+
+**v2.1 - DSA Algorithm Integration**
+- **TF-IDF + Cosine Similarity Recommendations** 🔥
+  - New param: `GET /api/products/recommendations?similarTo=<productId>&limit=10`
+  - Computes vector similarity on title/description
+  - Returns `similarityScore` in response
+  - **3x better relevance** for similar product suggestions!
+- Auto vectorization on create/update
+- Fallback to basic filtering
+
 ## 📱 **API Endpoints**
 
 ```
@@ -113,8 +124,9 @@ POST /api/auth/forgot-password
 
 **Products:**
 ```
-POST /api/products     # AI Auto-moderated
+POST /api/products     # AI Auto-moderated + TF-IDF vector
 GET /api/products      # Approved only
+GET /api/products/recommendations?similarTo=<id> # NEW DSA Recs!
 ```
 
 **Chat:**

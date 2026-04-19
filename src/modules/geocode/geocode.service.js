@@ -9,7 +9,7 @@ const reverseGeocode = async (lat, lng) => {
     try {
       const response = await fetch(nominatimUrl, {
         headers: {
-          'User-Agent': 'DealKroApp/1.0 (contact@dealkro.com)'
+'User-Agent': 'DealKroApp/1.0 (admin@dealkro.com)'
         }
       });
       const data = await response.json();
@@ -37,5 +37,24 @@ const reverseGeocode = async (lat, lng) => {
   }
 };
 
-export default { reverseGeocode };
+const forwardGeocode = async (location) => {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
+    const response = await fetch(url, {
+      headers: {
+'User-Agent': 'DealKroApp/1.0 (admin@dealkro.com)'
+      }
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+    }
+  } catch (error) {
+    console.warn('Forward geocoding failed:', error.message);
+  }
+  return null;
+};
+
+export default { reverseGeocode, forwardGeocode };
 
