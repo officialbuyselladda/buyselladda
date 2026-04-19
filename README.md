@@ -1,4 +1,4 @@
-# <img src="https://user-images.githubusercontent.com/74038190/233945377-d0c10fde-0845-43dc-ae71-6a79456f3777.png" alt="DealKro" width="50" height="50"/> **DealKro Backend** - Production-Ready Classifieds API 🚀
+# <img src="https://i.ibb.co/d4v1q3jZ/logo.jpg" alt="DealKro" width="50" height="50"/> **DealKro Backend** - Production-Ready Classifieds API 🚀
 
 <div align="center">
 
