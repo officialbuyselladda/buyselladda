@@ -30,8 +30,9 @@ const updateProductValidation = Joi.object({
   title: Joi.string().trim().min(3).max(120).optional(),
   description: Joi.string().trim().min(10).max(5000).optional(),
   price: Joi.number().min(1).max(100000000).optional(),
-  category: Joi.string()
+category: Joi.string()
     .valid('Electronics', 'Vehicles', 'Property', 'Jobs', 'Services', 'Others')
+    .allow('')
     .optional(),
   condition: Joi.string().valid('New', 'Used').optional(),
   images: Joi.array().items(imageSchema).min(1).optional(),
@@ -53,16 +54,16 @@ const productListQueryValidation = Joi.object({
     .optional(),
   search: Joi.string().trim().allow('', null).optional(),
   location: Joi.string().trim().allow('', null).optional(),
-  lat: Joi.number().optional(),
-  lng: Joi.number().optional(),
-  radius: Joi.number().min(1).max(500).optional(),
+lat: Joi.any().optional().allow(null, '', 'NaN'),
+  lng: Joi.any().optional().allow(null, '', 'NaN'),
+  radius: Joi.number().min(1).max(500).optional().allow(null, ''),
 }).unknown(false);
 
 const myProductsQueryValidation = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   cursor: Joi.string().pattern(objectIdRegex).optional(),
-  status: Joi.string().valid('pending', 'approved', 'rejected', 'suspicious').optional(),
+// status: Joi.string().valid('pending', 'approved', 'rejected', 'suspicious').optional(),
 }).unknown(false);
 
 const recommendationsQueryValidation = Joi.object({
