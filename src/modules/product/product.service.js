@@ -160,64 +160,59 @@ export const getProducts = async (query) => {
   let total;
   let nextCursor = null;
   let hasMore = false;
+  let geoUsed = false;
 
-  if (!isNaN(lat) && !isNaN(lng)) {
-    // Geospatial
-    const matchStage = {
-      status: 'approved',
-      ...(query.category && { category: query.category })
-    };
+  try {
+    if (!isNaN(lat) && !isNaN(lng)) {
+      // Try geospatial first
+      const matchStage = {
+        status: 'approved',
+        ...(query.category && { category: query.category })
+      };
 
-    if (cursor && mongoose.Types.ObjectId.isValid(cursor)) {
-      matchStage._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      if (cursor && mongoose.Types.ObjectId.isValid(cursor)) {
+        matchStage._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      }
+
+      if (query.search) {
+        matchStage.$text = { $search: query.search };
+      }
+
+      const pipeline = [
+        {
+          $geoNear: {
+            near: { type: 'Point', coordinates: [lng, lat] },
+            distanceField: 'dist.calculated',
+            maxDistance: radius,
+            spherical: true
+          }
+        },
+        {
+          $match: matchStage
+        },
+        { $sort: { isBoosted: -1, createdAt: -1, _id: -1 } },
+        ...(cursor ? [] : [{ $skip: skip }]),
+        { $limit: limit + 1 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+            pipeline: [{ $project: { name: 1, avatar: 1 } }]
+          }
+        },
+        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }
+      ];
+      products = await Product.aggregate(pipeline);
+      geoUsed = true;
     }
+  } catch (geoError) {
+    console.warn('Geospatial query failed, falling back:', geoError.message);
+  }
 
-    if (query.search) {
-      matchStage.$text = { $search: query.search };
-    }
-
-    const pipeline = [
-      {
-        $geoNear: {
-          near: { type: 'Point', coordinates: [lng, lat] },
-          distanceField: 'dist.calculated',
-          maxDistance: radius,
-          spherical: true
-        }
-      },
-      {
-        $match: matchStage
-      },
-      { $sort: { isBoosted: -1, createdAt: -1, _id: -1 } },
-      ...(cursor ? [] : [{ $skip: skip }]),
-      { $limit: limit + 1 },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'user',
-          foreignField: '_id',
-          as: 'user',
-          pipeline: [{ $project: { name: 1, avatar: 1 } }]
-        }
-      },
-      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }
-    ];
-    products = await Product.aggregate(pipeline);
-
-    hasMore = products.length > limit;
-    if (hasMore) {
-      products = products.slice(0, limit);
-    }
-    nextCursor = products.length ? products[products.length - 1]._id?.toString() : null;
-
-    const countPipeline = pipeline.slice(0, 2);
-    const countResult = await Product.aggregate([
-      ...countPipeline,
-      { $count: 'total' }
-    ]);
-    total = countResult[0]?.total || 0;
-  } else {
-    // Indexed text filter (inverted index via Mongo text index)
+  // Fallback to standard query if geo failed or no coords
+  if (!geoUsed || !products || products.length === 0) {
     const filter = { status: 'approved' };
     if (query.category) filter.category = query.category;
     if (query.location) filter.location = { $regex: query.location, $options: 'i' };
@@ -240,17 +235,17 @@ export const getProducts = async (query) => {
       .populate('user', 'name avatar')
       .skip(cursor ? 0 : skip)
       .limit(limit + 1);
-
-    hasMore = products.length > limit;
-    if (hasMore) {
-      products = products.slice(0, limit);
-    }
-    nextCursor = products.length ? products[products.length - 1]._id?.toString() : null;
-
-    const countFilter = { ...filter };
-    delete countFilter._id;
-    total = await Product.countDocuments(countFilter);
   }
+
+  hasMore = products.length > limit;
+  if (hasMore) {
+    products = products.slice(0, limit);
+  }
+  nextCursor = products.length ? products[products.length - 1]._id?.toString() : null;
+
+  const countFilter = { status: 'approved' };
+  if (query.category) countFilter.category = query.category;
+  total = await Product.countDocuments(countFilter);
 
   return {
     products,
@@ -262,7 +257,9 @@ export const getProducts = async (query) => {
       nextCursor,
       hasMore,
       mode: cursor ? 'cursor' : 'page',
+      geoUsed: !!geoUsed,
     },
+    warning: !geoUsed ? 'Geolocation temporarily unavailable - showing nationwide results' : null,
   };
 };
 

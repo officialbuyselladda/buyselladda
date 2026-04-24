@@ -58,7 +58,8 @@ const categorySchema = new mongoose.Schema({
 
 // Index for hierarchical queries
 categorySchema.index({ parent: 1, isActive: 1 });
-categorySchema.index({ slug: 1 });
+// Removed duplicate slug index - already defined in schema
+// categorySchema.index({ slug: 1 });
 categorySchema.index({ 'name': 'text', 'description': 'text' });
 
 // Virtual for children
