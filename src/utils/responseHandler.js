@@ -1,11 +1,17 @@
-const sendResponse = (res, { success, statusCode, message, data }) => {
+const sendResponse = (res, options = {}) => {
+  const {
+    success = true,
+    statusCode = 200,
+    message = '',
+    data = null
+  } = options;
+
   const response = {
     success,
-    statusCode,
     message,
   };
 
-  if (data) {
+  if (data !== null) {
     response.data = data;
   }
 
@@ -13,4 +19,3 @@ const sendResponse = (res, { success, statusCode, message, data }) => {
 };
 
 export default sendResponse;
-

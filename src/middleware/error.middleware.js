@@ -40,6 +40,13 @@ const errorHandler = (err, req, res, next) => {
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';
+  // Auth specific errors
+  } else if (err.message === 'User already exists') {
+    statusCode = 409;
+    message = 'User already exists';
+  } else if (err.message === 'Invalid credentials') {
+    statusCode = 401;
+    message = 'Invalid credentials';
   // Joi validation from controllers
   } else if (err.message && err.message.includes('"' ) && err.statusCode === 400) {
     statusCode = 400;

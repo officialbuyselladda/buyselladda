@@ -56,29 +56,28 @@ const categorySchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Index for hierarchical queries
+// 🔥 INDEXES
 categorySchema.index({ parent: 1, isActive: 1 });
-// Removed duplicate slug index - already defined in schema
-// categorySchema.index({ slug: 1 });
-categorySchema.index({ 'name': 'text', 'description': 'text' });
+categorySchema.index({ name: 'text', description: 'text' });
 
-// Virtual for children
+// 🔥 VIRTUAL CHILDREN (IMPORTANT)
 categorySchema.virtual('children', {
   ref: 'Category',
   localField: '_id',
   foreignField: 'parent'
 });
 
+// 🔥 AUTO SLUG
 categorySchema.pre('save', function(next) {
   if (this.isModified('name')) {
-    this.slug = this.name.toLowerCase()
+    this.slug = this.name
+      .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim('-');
+      .trim();
   }
   next();
 });
 
 export default mongoose.model('Category', categorySchema);
-

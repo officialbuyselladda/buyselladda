@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Category = require('../src/modules/category/category.model.js');
-const connectDB = require('../src/config/db.js');
+import mongoose from 'mongoose';
+import Category from '../src/modules/category/category.model.js';
+import connectDB from '../src/config/db.js';
 
 const categoriesData = [
   // Main Categories
@@ -52,9 +52,7 @@ const seedCategories = async () => {
   }
 };
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   seedCategories();
 }
-
-module.exports = seedCategories;
 
