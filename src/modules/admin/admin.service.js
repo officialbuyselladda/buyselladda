@@ -35,12 +35,13 @@ const listProducts = async ({ page = 1, limit = 10, status, search }) => {
   return { products, total, page, limit, pages: Math.ceil(total / limit) };
 };
 
-const listUsers = async ({ page = 1, limit = 10, role, search }) => {
+const listUsers = async ({ page = 1, limit = 10, role, search, status }) => {
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 10, 100);
   const skip = (pageNum - 1) * limitNum;
-  const query = {};
+  const query = { role: { $ne: 'admin' } };
   if (role && role !== 'all') query.role = role;
+  if (status && status !== 'all') query.isBlocked = status === 'blocked';
   if (search && search.trim()) {
     query.$or = [
       { name: { $regex: search.trim(), $options: 'i' } },
@@ -48,15 +49,33 @@ const listUsers = async ({ page = 1, limit = 10, role, search }) => {
     ];
   }
   const [users, total] = await Promise.all([
-    User.find(query).select('-password').sort('-createdAt').skip(skip).limit(limit).lean(),
+    User.find(query).select('-password').populate('products').sort('-createdAt').skip(skip).limit(limitNum).lean(),
     User.countDocuments(query)
   ]);
-  return { users, total, page, limit, pages: Math.ceil(total / limit) };
+  users.forEach(u => {
+    u.productCount = u.products ? u.products.length : 0;
+    u.status = u.isBlocked ? 'blocked' : 'active';
+  });
+  return { users, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) };
+};
+
+const toggleUserBlock = async (id) => {
+  const user = await User.findById(id);
+  if (!user || user.role === 'admin') {
+    throw new Error('Cannot block admin');
+  }
+  user.isBlocked = !user.isBlocked;
+  await user.save();
+  const action = user.isBlocked ? 'blocked' : 'unblocked';
+  // TODO: sendEmail
+  return user;
 };
 
 const getUserDetail = async (id) => {
   const user = await User.findById(id).populate('products').select('-password').lean();
   if (!user) throw new Error('User not found');
+  user.productCount = user.products ? user.products.length : 0;
+  user.status = user.isBlocked ? 'blocked' : 'active';
   return user;
 };
 

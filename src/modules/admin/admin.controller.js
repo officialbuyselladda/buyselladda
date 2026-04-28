@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -64,6 +64,24 @@ const getUserDetail = asyncHandler(async (req, res) => {
     success: true,
     statusCode: 200,
     message: 'User detail',
+    data: user,
+  });
+});
+
+const toggleUserBlock = asyncHandler(async (req, res) => {
+  const { error } = toggleUserBlockValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const user = await adminService.toggleUserBlock(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: `User ${user.isBlocked ? 'blocked' : 'unblocked'}`,
     data: user,
   });
 });
@@ -140,5 +158,5 @@ const rejectProduct = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserDetail };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserDetail, toggleUserBlock };
 
