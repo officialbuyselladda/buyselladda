@@ -65,11 +65,50 @@ const getUnreadCount = asyncHandler(async (userId) => {
   return await Notification.countDocuments({ user: userId, isRead: false });
 });
 
+const getAdminNotifications = asyncHandler(async (query) => {
+  const { page = 1, limit = 20, search, user, read, type, priority } = query;
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  if (user) filter.user = user;
+  if (read !== null) filter.isRead = read === 'true';
+  if (type) filter.type = type;
+  if (priority) filter.priority = priority;
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { message: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const notifications = await Notification.find(filter)
+    .populate('user', 'name email phone')
+    .populate('relatedProduct', 'title images price')
+    .populate('relatedChat', 'participants')
+    .sort('-createdAt')
+    .skip(skip)
+    .limit(parseInt(limit))
+    .lean();
+
+  const total = await Notification.countDocuments(filter);
+
+  return {
+    notifications,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
+});
+
 export {
   createNotification,
   getUserNotifications,
   markAsRead,
   markAllAsRead,
-  getUnreadCount
+  getUnreadCount,
+  getAdminNotifications
 };
 

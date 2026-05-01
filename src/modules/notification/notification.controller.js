@@ -36,11 +36,21 @@ const createNotification = asyncHandler(async (req, res) => {
   responseHandler(res, 'Notification created', notification, 201);
 });
 
+const getAdminNotifications = asyncHandler(async (req, res) => {
+  const { error, value } = listNotificationsSchema.validate(req.query);
+  if (error) throw new ValidationError(error.details[0].message);
+
+  const notifications = await notificationService.getAdminNotifications(value);
+  responseHandler(res, 'Admin notifications retrieved', notifications);
+});
+
 export {
   getUserNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
-  createNotification
+  createNotification,
+  getAdminNotifications
 };
+
 

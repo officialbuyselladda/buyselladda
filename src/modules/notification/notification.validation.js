@@ -1,7 +1,9 @@
 import Joi from 'joi';
 
 export const createNotificationSchema = Joi.object({
+  user: Joi.string().required(),
   type: Joi.string().valid('new_message', 'product_status', 'favorite_activity', 'system', 'promotion').required(),
+
   title: Joi.string().trim().max(200).required(),
   message: Joi.string().trim().max(1000).required(),
   data: Joi.object().optional(),
