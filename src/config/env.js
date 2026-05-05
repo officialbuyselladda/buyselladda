@@ -6,6 +6,7 @@ dotenv.config();
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('production', 'development', 'test').default('development'),
   PORT: Joi.number().default(5000),
+  HTTPS_PORT: Joi.number().default(5443),
   MONGODB_URI: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRE: Joi.string().default('30d'),
