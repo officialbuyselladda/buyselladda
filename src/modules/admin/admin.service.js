@@ -48,12 +48,25 @@ const listUsers = async ({ page = 1, limit = 10, role, search, status }) => {
       { email: { $regex: search.trim(), $options: 'i' } }
     ];
   }
+  // Get users without populate - we'll count products separately
   const [users, total] = await Promise.all([
-    User.find(query).select('-password').populate('products').sort('-createdAt').skip(skip).limit(limitNum).lean(),
+    User.find(query).select('-password').sort('-createdAt').skip(skip).limit(limitNum).lean(),
     User.countDocuments(query)
   ]);
+  
+  // Get product counts for all users
+  const Product = (await import('../product/product.model.js')).default;
+  const userIds = users.map(u => u._id);
+  const productCounts = await Product.aggregate([
+    { $match: { user: { $in: userIds }, status: { $ne: 'deleted' } } },
+    { $group: { _id: '$user', count: { $sum: 1 } } }
+  ]);
+  
+  const countMap = {};
+  productCounts.forEach(p => { countMap[p._id.toString()] = p.count; });
+  
   users.forEach(u => {
-    u.productCount = u.products ? u.products.length : 0;
+    u.productCount = countMap[u._id.toString()] || 0;
     u.status = u.isBlocked ? 'blocked' : 'active';
   });
   return { users, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) };

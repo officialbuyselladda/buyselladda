@@ -84,11 +84,26 @@ const getCategoryTree = asyncHandler(async (req, res) => {
   responseHandler(res, 'Category tree retrieved successfully', tree);
 });
 
+// ✅ ADMIN LIST - all categories for admin panel
+const listCategoriesAdmin = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search, status } = req.query;
+
+  const result = await categoryService.listCategoriesAdmin({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    search,
+    status
+  });
+
+  responseHandler(res, 'Admin categories retrieved successfully', result);
+});
+
 export {
   createCategory,
   getCategory,
   getCategoryBySlug,
   listCategories,
+  listCategoriesAdmin,
   updateCategory,
   deleteCategory,
   getCategoryTree

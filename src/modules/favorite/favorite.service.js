@@ -59,9 +59,62 @@ const getFavoriteCount = asyncHandler(async (userId) => {
   return await Favorite.countDocuments({ user: userId });
 });
 
+// Admin: List all favorites with pagination
+const listFavoritesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, userId }) => {
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 10, 100);
+  const skip = (pageNum - 1) * limitNum;
+  
+  const filter = {};
+  if (userId) filter.user = userId;
+  
+  const favorites = await Favorite.find(filter)
+    .populate({
+      path: 'user',
+      select: 'name email avatar'
+    })
+    .populate({
+      path: 'product',
+      select: 'title description price images status category',
+      match: search ? { 
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      } : {}
+    })
+    .sort('-createdAt')
+    .skip(skip)
+    .limit(limitNum)
+    .lean();
+  
+  // Filter out null products
+  const validFavorites = favorites.filter(f => f.product);
+  
+  const total = await Favorite.countDocuments(filter);
+  
+  return {
+    favorites: validFavorites,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    pages: Math.ceil(total / limitNum)
+  };
+});
+
+// Admin: Delete a favorite by ID
+const deleteFavorite = asyncHandler(async (id) => {
+  const favorite = await Favorite.findById(id);
+  if (!favorite) throw new NotFoundError('Favorite not found');
+  await favorite.deleteOne();
+  return { message: 'Favorite deleted successfully' };
+});
+
 export {
   toggleFavorite,
   getUserFavorites,
-  getFavoriteCount
+  getFavoriteCount,
+  listFavoritesAdmin,
+  deleteFavorite
 };
 

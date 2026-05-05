@@ -146,11 +146,64 @@ const getCategoryTree = asyncHandler(async () => {
   return roots;
 });
 
+// ✅ ADMIN LIST - includes all categories (active and inactive)
+const listCategoriesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, status }) => {
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 10, 100);
+  const skip = (pageNum - 1) * limitNum;
+  
+  const filter = {};
+  if (status && status !== 'all') {
+    filter.isActive = status === 'active';
+  }
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } }
+    ];
+  }
+  
+  const [categories, total] = await Promise.all([
+    Category.find(filter)
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limitNum)
+      .populate('parent', 'name slug')
+      .lean(),
+    Category.countDocuments(filter)
+  ]);
+  
+  // Get product counts for each category
+  const Product = (await import('../product/product.model.js')).default;
+  const categoryIds = categories.map(c => c._id);
+  const productCounts = await Product.aggregate([
+    { $match: { category: { $in: categoryIds }, status: { $ne: 'deleted' } } },
+    { $group: { _id: '$category', count: { $sum: 1 } } }
+  ]);
+  
+  const countMap = {};
+  productCounts.forEach(p => { countMap[p._id.toString()] = p.count; });
+  
+  categories.forEach(c => {
+    c.productCount = countMap[c._id.toString()] || 0;
+    c.status = c.isActive ? 'active' : 'inactive';
+  });
+  
+  return { 
+    categories, 
+    total, 
+    page: pageNum, 
+    limit: limitNum, 
+    pages: Math.ceil(total / limitNum) 
+  };
+});
+
 export {
   createCategory,
   getCategoryById,
   getCategoryBySlug,
   listCategories,
+  listCategoriesAdmin,
   updateCategory,
   deleteCategory,
   getCategoryTree

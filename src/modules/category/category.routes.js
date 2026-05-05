@@ -8,6 +8,9 @@ router.route('/')
   .post(authMiddleware, adminMiddleware, categoryController.createCategory)
   .get(categoryController.listCategories);
 
+// Admin route for listing all categories
+router.get('/admin/list', authMiddleware, adminMiddleware, categoryController.listCategoriesAdmin);
+
 router.route('/tree')
   .get(categoryController.getCategoryTree);
 

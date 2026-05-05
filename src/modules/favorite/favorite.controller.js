@@ -25,9 +25,32 @@ const getFavoriteCount = asyncHandler(async (req, res) => {
   responseHandler(res, 'Favorite count retrieved', { count });
 });
 
+// Admin: List all favorites
+const listFavoritesAdmin = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search, userId } = req.query;
+  
+  const result = await favoriteService.listFavoritesAdmin({
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+    search,
+    userId
+  });
+  
+  responseHandler(res, 'Admin favorites retrieved successfully', result);
+});
+
+// Admin: Delete a favorite
+const deleteFavoriteAdmin = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await favoriteService.deleteFavorite(id);
+  responseHandler(res, 'Favorite deleted successfully');
+});
+
 export {
   toggleFavorite,
   getUserFavorites,
-  getFavoriteCount
+  getFavoriteCount,
+  listFavoritesAdmin,
+  deleteFavoriteAdmin
 };
 
