@@ -11,9 +11,10 @@ const app = express();
 
 // Dynamic CORS origin for production
 const isProduction = process.env.NODE_ENV === 'production';
+// For VPS, allow dynamic origins or use environment variable
 const allowedOrigins = isProduction 
-  ? ['https://dealkro.in', 'https://www.dealkro.in'] 
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://72.60.102.36:5173'];
+  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://dealkro.in', 'https://www.dealkro.in'])
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://72.60.102.36:5173', 'http://72.60.102.36'];
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -23,7 +24,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
+    if (allowedOrigins.indexOf(origin) === -1 && !origin.startsWith('http://72.60.102.36') && !origin.startsWith('https://')) {
       return callback(new Error('Not allowed by CORS'), false);
     }
     return callback(null, true);
