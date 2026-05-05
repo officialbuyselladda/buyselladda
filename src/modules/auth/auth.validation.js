@@ -1,21 +1,38 @@
 import Joi from 'joi';
 
 const registerValidation = Joi.object({
-  name: Joi.string().trim().min(2).max(30).required(),
-  email: Joi.string().trim().email().required(),
+  name: Joi.string().trim().min(2).max(30).required()
+    .messages({
+      'string.empty': 'Name is required',
+      'string.min': 'Name must be at least {#limit} characters',
+      'string.max': 'Name cannot exceed {#limit} characters',
+    }),
+  email: Joi.string().trim().email().required()
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+    }),
   password: Joi.string()
-    .min(8)
+    .min(6)
     .max(64)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/)
     .required()
     .messages({
-      'string.pattern.base': 'Password must include uppercase, lowercase, number, and special character',
+      'string.empty': 'Password is required',
+      'string.min': 'Password must be at least {#limit} characters',
+      'string.max': 'Password cannot exceed {#limit} characters',
     }),
 });
 
 const loginValidation = Joi.object({
-  email: Joi.string().trim().email().required(),
-  password: Joi.string().min(1).required(),
+  email: Joi.string().trim().email().required()
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+    }),
+  password: Joi.string().min(1).required()
+    .messages({
+      'string.empty': 'Password is required',
+    }),
 });
 
 export { registerValidation, loginValidation };

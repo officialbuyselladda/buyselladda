@@ -5,15 +5,18 @@ import generateToken from '../../utils/generateToken.js';
 const register = async (userData) => {
   const { name, email, password } = userData;
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error('User already exists');
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
   try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      const error = new Error('This email is already registered. Please login or use a different email.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const user = await User.create({
       name,
       email,
@@ -21,11 +24,18 @@ const register = async (userData) => {
     });
     return user;
   } catch (error) {
+    if (error.statusCode) {
+      throw error;
+    }
     if (error.code === 11000) {
-      throw new Error('User already exists');
+      const err = new Error('This email is already registered. Please login or use a different email.');
+      err.statusCode = 409;
+      throw err;
     }
     console.error('Create user error:', error);
-    throw error;
+    const err = new Error('Could not create user. Please try again later.');
+    err.statusCode = 500;
+    throw err;
   }
 };
 

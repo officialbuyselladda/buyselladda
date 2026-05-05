@@ -14,17 +14,20 @@ const errorHandler = (err, req, res, next) => {
   if (err.name === 'MongoServerError') {
     if (err.code === 11000) {
       statusCode = 409;
-      message = 'Duplicate entry';
+      message = 'This email is already registered. Please login or use a different email.';
     } else if (err.code === 66) {
       statusCode = 503;
-      message = 'Database index error';
+      message = 'Database index error. Please try again.';
     } else {
       statusCode = 503;
-      message = 'Database service unavailable';
+      message = 'Database service unavailable. Please try again later.';
     }
   } else if (err.name === 'MongoNetworkError') {
     statusCode = 503;
-    message = 'Database connection failed';
+    message = 'Cannot connect to database. Please check your internet connection.';
+  } else if (err.name === 'MongooseError') {
+    statusCode = 503;
+    message = 'Database connection error. Please try again later.';
   } else if (err.message.includes('$geoNear') || err.message.includes('2dsphere')) {
     statusCode = 503;
     message = 'Geospatial query unavailable - using nationwide search';
@@ -36,17 +39,29 @@ const errorHandler = (err, req, res, next) => {
     message = 'Resource not found';
   } else if (err.name === 'ValidationError') {
     statusCode = 400;
-    message = 'Validation failed';
+    message = err.message || 'Validation failed. Please check your input.';
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
-    message = 'Invalid token';
+    message = 'Invalid or expired token. Please login again.';
+  } else if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Your session has expired. Please login again.';
   // Auth specific errors
   } else if (err.message === 'User already exists') {
     statusCode = 409;
-    message = 'User already exists';
+    message = 'This email is already registered. Please login or use a different email.';
   } else if (err.message === 'Invalid credentials') {
     statusCode = 401;
-    message = 'Invalid credentials';
+    message = 'Invalid email or password. Please try again.';
+  } else if (err.message === 'Password required') {
+    statusCode = 400;
+    message = 'Password is required. Please provide your password.';
+  } else if (err.message.includes('duplicate key')) {
+    statusCode = 409;
+    message = 'This email is already registered. Please login or use a different email.';
+  } else if (err.message.includes('password') && err.message.includes('invalid')) {
+    statusCode = 400;
+    message = 'Invalid password format. Password must be at least 6 characters.';
   // Joi validation from controllers
   } else if (err.message && err.message.includes('"' ) && err.statusCode === 400) {
     statusCode = 400;
@@ -54,6 +69,9 @@ const errorHandler = (err, req, res, next) => {
   } else if (statusCode < 500 && err.message && !err.message.includes('secret')) {
     // Preserve safe business messages for 4xx errors (non-sensitive)
     message = err.message;
+  } else if (statusCode === 500 && process.env.NODE_ENV !== 'development') {
+    // For production 500 errors, give a friendly message
+    message = 'Server error. Please try again later.';
   }
 
   res.status(statusCode).json({
