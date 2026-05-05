@@ -51,6 +51,19 @@ const isImageSetSafe = (images = []) => {
   });
 };
 
+// Generate unique slug from title + timestamp + random to prevent duplicates
+const generateSlug = (title) => {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  const slugBase = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .substring(0, 50); // Limit length
+  return `${slugBase}-${timestamp}-${random}`;
+};
+
 export const createProduct = async (productData) => {
   const user = await User.findById(productData.user).select('trustScore');
   if (!user) throw new Error('User not found');
@@ -106,7 +119,11 @@ export const createProduct = async (productData) => {
 
   // Removed contentHash and duplicate check to allow posting without duplicate errors
 
-  const product = await Product.create({ ...productData, status, searchVector });
+// Generate unique slug to prevent duplicate key errors
+  const slug = generateSlug(productData.title);
+  console.log('Generated slug:', slug);
+
+  const product = await Product.create({ ...productData, status, searchVector, slug });
   
   // Send notification email
   let subject, html;
