@@ -85,8 +85,8 @@ export const createProduct = async (productData) => {
   if (isValidPriceRange) score += 2;
   if (imageSafe) score += 2;
 
-// All products go directly to approved - no duplicate check, no pending status
-  const status = 'approved';
+// All products go to pending - admin approval required before showing on website
+  const status = 'pending';
 
   // Auto-geocode location if no coordinates
   console.log('Attempting to geocode location:', productData.location);

@@ -81,8 +81,15 @@ const getUserDetail = async (id) => {
 
 const approveProduct = async (id) => {
   const product = await Product.findById(id);
-  if (!product || product.status !== 'pending') {
-    throw new Error('Product not pending');
+  if (!product) {
+    throw new Error('Product not found');
+  }
+  // Allow approval of any non-approved product (pending, suspicious, etc.)
+  if (product.status === 'approved') {
+    throw new Error('Product already approved');
+  }
+  if (product.status === 'deleted') {
+    throw new Error('Product was deleted');
   }
   product.status = 'approved';
   await product.save();
