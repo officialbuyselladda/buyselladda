@@ -11,7 +11,7 @@ async function dropIndexes() {
 
   const Product = (await import('./src/modules/product/product.model.js')).default;
   
-  try {
+try {
     await Product.collection.dropIndex('user_1_contentHash_1');
     console.log('✅ Dropped index: user_1_contentHash_1');
   } catch (e) {
@@ -23,6 +23,14 @@ async function dropIndexes() {
     console.log('✅ Dropped index: slug_1');
   } catch (e) {
     console.log('⚠️ Index slug_1 not found or already dropped');
+  }
+
+  // Drop contentHash index - this is causing duplicate entry errors
+  try {
+    await Product.collection.dropIndex('contentHash_1');
+    console.log('✅ Dropped index: contentHash_1');
+  } catch (e) {
+    console.log('⚠️ Index contentHash_1 not found or already dropped');
   }
 
   // Also drop any other duplicate indexes

@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Product from './product.model.js';
 import User from '../user/user.model.js';
@@ -50,17 +49,6 @@ const isImageSetSafe = (images = []) => {
     const hasValidPublicId = typeof img?.public_id === 'string' && img.public_id.trim().length > 0;
     return hasValidUrl || hasValidPublicId;
   });
-};
-
-const createContentHash = (title = '', description = '') => {
-  const normalize = (value) =>
-    String(value || '')
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ');
-
-  const base = `${normalize(title)}|${normalize(description)}`;
-  return crypto.createHash('sha256').update(base).digest('hex');
 };
 
 export const createProduct = async (productData) => {
