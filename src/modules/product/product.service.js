@@ -112,15 +112,13 @@ export const createProduct = async (productData) => {
     console.log('locationCoords already present:', productData.locationCoords);
   }
 
-const contentHash = createContentHash(productData.title, productData.description);
-
-  // Compute DSA search vector
+// Compute DSA search vector
   const contentText = `${productData.title} ${productData.description}`.toLowerCase();
   const searchVector = computeTFIDF(contentText);
 
-  // Removed duplicate check to allow posting without duplicate errors
+  // Removed contentHash and duplicate check to allow posting without duplicate errors
 
-  const product = await Product.create({ ...productData, status, contentHash, searchVector });
+  const product = await Product.create({ ...productData, status, searchVector });
   
   // Send notification email
   let subject, html;

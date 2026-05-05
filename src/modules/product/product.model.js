@@ -59,14 +59,10 @@ const productSchema = mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'suspicious'],
     default: 'pending',
   },
-slug: {
+  slug: {
     type: String,
     lowercase: true,
     trim: true
-  },
-  contentHash: {
-    type: String,
-    index: true,
   },
   searchVector: [
     {
@@ -85,7 +81,6 @@ productSchema.index({ category: 1, status: 1, createdAt: -1 });
 productSchema.index({ category: 1, createdAt: -1 });
 productSchema.index({ user: 1, createdAt: -1 });
 productSchema.index({ isBoosted: -1, createdAt: -1, status: 1 });
-productSchema.index({ user: 1, contentHash: 1 });
 productSchema.index({ locationCoords: '2dsphere' });
 
 
