@@ -13,8 +13,14 @@ const errorHandler = (err, req, res, next) => {
   // Specific MongoDB errors
   if (err.name === 'MongoServerError') {
     if (err.code === 11000) {
-      statusCode = 409;
-      message = 'This email is already registered. Please login or use a different email.';
+      // Check if it's a product duplicate (contains 'contentHash' or 'user_1_contentHash')
+      if (err.message && (err.message.includes('contentHash') || err.message.includes('user_1_contentHash'))) {
+        statusCode = 409;
+        message = 'A similar product already exists. Please modify your title or description and try again.';
+      } else {
+        statusCode = 409;
+        message = 'This email is already registered. Please login or use a different email.';
+      }
     } else if (err.code === 66) {
       statusCode = 503;
       message = 'Database index error. Please try again.';
@@ -56,14 +62,23 @@ const errorHandler = (err, req, res, next) => {
   } else if (err.message === 'Password required') {
     statusCode = 400;
     message = 'Password is required. Please provide your password.';
-  } else if (err.message.includes('duplicate key')) {
+  } else if (err.message === 'Duplicate product detected') {
     statusCode = 409;
-    message = 'This email is already registered. Please login or use a different email.';
+    message = 'A similar product already exists. Please modify your title or description and try again.';
+  } else if (err.message && err.message.includes('duplicate key')) {
+    // Generic duplicate key error - check context
+    if (err.message.includes('contentHash') || err.message.includes('user_1')) {
+      statusCode = 409;
+      message = 'A similar product already exists. Please modify your title or description and try again.';
+    } else {
+      statusCode = 409;
+      message = 'This email is already registered. Please login or use a different email.';
+    }
   } else if (err.message.includes('password') && err.message.includes('invalid')) {
     statusCode = 400;
     message = 'Invalid password format. Password must be at least 6 characters.';
   // Joi validation from controllers
-  } else if (err.message && err.message.includes('"' ) && err.statusCode === 400) {
+  } else if (err.message && err.message.includes('"') && err.statusCode === 400) {
     statusCode = 400;
     message = err.message;
   } else if (statusCode < 500 && err.message && !err.message.includes('secret')) {
@@ -82,4 +97,3 @@ const errorHandler = (err, req, res, next) => {
 };
 
 export default errorHandler;
-

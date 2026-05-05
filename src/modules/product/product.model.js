@@ -86,7 +86,7 @@ productSchema.index({ category: 1, status: 1, createdAt: -1 });
 productSchema.index({ category: 1, createdAt: -1 });
 productSchema.index({ user: 1, createdAt: -1 });
 productSchema.index({ isBoosted: -1, createdAt: -1, status: 1 });
-productSchema.index({ user: 1, contentHash: 1 }, { unique: true, sparse: true });
+productSchema.index({ user: 1, contentHash: 1 });
 productSchema.index({ locationCoords: '2dsphere' });
 
 

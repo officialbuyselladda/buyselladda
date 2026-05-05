@@ -111,22 +111,13 @@ export const createProduct = async (productData) => {
     console.log('locationCoords already present:', productData.locationCoords);
   }
 
-  const contentHash = createContentHash(productData.title, productData.description);
+const contentHash = createContentHash(productData.title, productData.description);
 
   // Compute DSA search vector
   const contentText = `${productData.title} ${productData.description}`.toLowerCase();
   const searchVector = computeTFIDF(contentText);
 
-  const duplicateExists = await Product.exists({
-    user: productData.user,
-    contentHash,
-  });
-
-  if (duplicateExists) {
-    const error = new Error('Duplicate product detected');
-    error.statusCode = 409;
-    throw error;
-  }
+  // Removed duplicate check to allow posting without duplicate errors
 
   const product = await Product.create({ ...productData, status, contentHash, searchVector });
   
