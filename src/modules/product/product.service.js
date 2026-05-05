@@ -134,8 +134,14 @@ export const createProduct = async (productData) => {
     subject = 'Ad Under Review';
     html = templates.adSuspicious(productData.title);
   }
-  if (html) {
-    await sendEmail(user.email, subject, html);
+if (html) {
+    try {
+      await sendEmail(user.email, subject, html);
+      console.log('✅ Notification email sent successfully');
+    } catch (emailErr) {
+      // Don't fail product creation if email fails - just log the error
+      console.warn('⚠️ Email send failed (non-blocking):', emailErr.message);
+    }
   }
   
   return product.populate('user', 'name avatar');
