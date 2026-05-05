@@ -59,9 +59,8 @@ const productSchema = mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'suspicious'],
     default: 'pending',
   },
-  slug: {
+slug: {
     type: String,
-    unique: true,
     lowercase: true,
     trim: true
   },
