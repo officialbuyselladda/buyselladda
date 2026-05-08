@@ -11,7 +11,7 @@ router.patch('/read-all', authMiddleware, notificationController.markAllAsRead);
 
 // Admin routes
 router.post('/', authMiddleware, adminMiddleware, notificationController.createNotification);
-router.get('/admin/list', adminMiddleware, notificationController.getAdminNotifications);
+router.get('/admin/list', authMiddleware, adminMiddleware, notificationController.getAdminNotifications);
 
 export default router;
 
