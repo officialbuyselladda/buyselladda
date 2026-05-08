@@ -21,7 +21,8 @@ const deleteProduct = async (id) => {
 const listProducts = async ({ page = 1, limit = 10, status, search }) => {
   const skip = (page - 1) * limit;
   const query = { status: { $ne: 'deleted' } };
-  if (status) query.status = status;
+  // Fix: Only apply status filter if status is a valid value (not 'all')
+  if (status && status !== 'all') query.status = status;
   if (search && search.trim()) {
     query.$or = [
       { title: { $regex: search.trim(), $options: 'i' } },
