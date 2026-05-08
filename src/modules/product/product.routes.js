@@ -36,9 +36,9 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
     });
   }
   
-  // Create or find chat with seller
+  // Create or find chat with seller (pass productId so same product = same chat)
   const participants = [req.user._id, product.user];
-  const chat = await chatService.createChat(participants);
+  const chat = await chatService.createChat(participants, productId);
   
   sendResponse(res, {
     success: true,

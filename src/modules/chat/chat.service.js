@@ -1,10 +1,12 @@
 import Chat from './chat.model.js';
 import Message from './message.model.js';
 import User from '../user/user.model.js';
+import Product from '../product/product.model.js';
 
 const getUserChats = async (userId) => {
   const chats = await Chat.find({ participants: userId })
     .populate('participants', 'name avatar email')
+    .populate('product', 'title price images')
     .populate({
       path: 'lastMessage',
       populate: { path: 'sender', select: 'name avatar' },
@@ -14,7 +16,8 @@ const getUserChats = async (userId) => {
 };
 
 const getMessages = async (chatId, userId) => {
-  const chat = await Chat.findOne({ _id: chatId, participants: userId });
+  const chat = await Chat.findOne({ _id: chatId, participants: userId })
+    .populate('product', 'title price images');
   if (!chat) throw new Error('Chat not found');
 
   const page = 1;
@@ -47,11 +50,21 @@ const sendMessage = async (chatId, senderId, data) => {
   return message.populate('sender', 'name avatar');
 };
 
-const createChat = async (participants) => {
-  const chat = await Chat.findOne({ participants: { $size: 2, $all: participants.sort() } });
+const createChat = async (participants, productId = null) => {
+  // Try to find existing chat with same participants AND product
+  const query = { participants: { $size: 2, $all: participants.sort() } };
+  if (productId) {
+    query.product = productId;
+  }
+  
+  const chat = await Chat.findOne(query);
   if (chat) return chat;
 
-  const newChat = await Chat.create({ participants });
+  // Create new chat
+  const newChat = await Chat.create({
+    participants,
+    product: productId,
+  });
   return newChat;
 };
 
