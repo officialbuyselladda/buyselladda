@@ -32,7 +32,15 @@ const listProducts = async ({ page = 1, limit = 10, status, search }) => {
     Product.find(query).populate('user', 'name email trustScore').sort('-createdAt').skip(skip).limit(limit).lean(),
     Product.countDocuments(query)
   ]);
-  return { products, total, page, limit, pages: Math.ceil(total / limit) };
+  
+  // Add sellerName and sellerEmail fields for frontend compatibility
+  const productsWithSeller = products.map(product => ({
+    ...product,
+    sellerName: product.user?.name || 'Unknown',
+    sellerEmail: product.user?.email || 'Unknown'
+  }));
+  
+  return { products: productsWithSeller, total, page, limit, pages: Math.ceil(total / limit) };
 };
 
 const listUsers = async ({ page = 1, limit = 10, role, search, status }) => {

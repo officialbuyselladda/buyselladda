@@ -265,11 +265,19 @@ export const getProducts = async (query) => {
 };
 
 export const getProduct = async (id) => {
-  const product = await Product.findById(id).populate('user', 'name avatar');
+  const product = await Product.findById(id).populate('user', 'name avatar email');
   if (!product || product.status !== 'approved') throw new Error('Product not found or not approved');
   product.views += 1;
   await product.save();
-  return product;
+  
+  // Add sellerName and sellerEmail for frontend compatibility
+  const productWithSeller = {
+    ...product.toObject(),
+    sellerName: product.user?.name || 'Unknown',
+    sellerEmail: product.user?.email || 'Unknown'
+  };
+  
+  return productWithSeller;
 };
 
 export const updateProduct = async (id, updateData, userId) => {
