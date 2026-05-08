@@ -28,7 +28,7 @@ const auth = async (req, res, next) => {
     
     // Attach full user object to req.user including role
     req.user = user;
-    console.log('Auth middleware - User role:', user.role); // Debug log
+    console.log('Auth middleware - User:', user.name, 'Role:', user.role); // Debug log
     next();
   } catch (error) {
     console.log('Auth error:', error.message);
