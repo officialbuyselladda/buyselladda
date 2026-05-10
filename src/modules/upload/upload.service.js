@@ -1,5 +1,15 @@
 import cloudinary from '../../config/cloudinary.js';
 
+const buildPublicId = (filename = 'image') => {
+  const baseName = filename
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+
+  return `${baseName || 'image'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+};
+
 const uploadImage = async (buffer, filename) => {
   console.log('🔄 Cloudinary upload starting for', filename, '- Config:', cloudinary.config().cloud_name ? 'OK' : 'MISSING');
 
@@ -12,7 +22,8 @@ const uploadImage = async (buffer, filename) => {
       {
         resource_type: 'image',
         folder: 'dealkro/products',
-        public_id: filename.replace(/\\.[^/.]+$/, ""),
+        public_id: buildPublicId(filename),
+        overwrite: false,
         quality: 'auto',
         fetch_format: 'auto'
       },

@@ -32,7 +32,7 @@ const createNotification = asyncHandler(async (req, res) => {
   const { error, value } = createNotificationSchema.validate(req.body);
   if (error) throw new ValidationError(error.details[0].message);
 
-  const notification = await notificationService.createNotification(value.user, value);
+  const notification = await notificationService.createAdminNotification(value);
   responseHandler(res, 'Notification created', notification, 201);
 });
 
@@ -44,13 +44,19 @@ const getAdminNotifications = asyncHandler(async (req, res) => {
   responseHandler(res, 'Admin notifications retrieved', notifications);
 });
 
+const deleteNotificationAdmin = asyncHandler(async (req, res) => {
+  await notificationService.deleteNotificationAdmin(req.params.id);
+  responseHandler(res, 'Notification deleted');
+});
+
 export {
   getUserNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
   createNotification,
-  getAdminNotifications
+  getAdminNotifications,
+  deleteNotificationAdmin
 };
 
 

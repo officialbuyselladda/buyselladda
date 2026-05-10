@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -85,6 +85,25 @@ const toggleUserBlock = asyncHandler(async (req, res) => {
     data: user,
   });
 });
+
+const createUser = asyncHandler(async (req, res) => {
+  const { error, value } = createUserValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const user = await adminService.createUser(value);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'User created',
+    data: user,
+  });
+});
+
 
 const updateUser = asyncHandler(async (req, res) => {
   const paramValidation = userDetailValidation.validate({ id: req.params.id });
@@ -186,5 +205,54 @@ const rejectProduct = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserDetail, toggleUserBlock, updateUser };
+const getChats = asyncHandler(async (req, res) => {
+  const chats = await adminService.listChats(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Chats list',
+    data: chats,
+  });
+});
+
+const deleteChat = asyncHandler(async (req, res) => {
+  await adminService.deleteChat(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Chat deleted',
+  });
+});
+
+const getReports = asyncHandler(async (req, res) => {
+  const reports = await adminService.getReports(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Reports list',
+    data: reports,
+  });
+});
+
+const getModeration = asyncHandler(async (req, res) => {
+  const moderation = await adminService.getModerationQueue(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Moderation queue',
+    data: moderation,
+  });
+});
+
+const getAnalytics = asyncHandler(async (req, res) => {
+  const analytics = await adminService.getAnalytics();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Analytics data',
+    data: analytics,
+  });
+});
+
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, createUser, getUserDetail, toggleUserBlock, updateUser, getChats, deleteChat, getReports, getModeration, getAnalytics };
 

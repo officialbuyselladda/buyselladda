@@ -4,6 +4,7 @@ import {
   createProduct, 
   getProducts, 
   getProduct, 
+  getMyProduct,
   updateProduct, 
   deleteProduct, 
   getMyProducts, 
@@ -69,6 +70,24 @@ const getProductHandler = asyncHandler(async (req, res) => {
     data: product,
   });
 });
+
+const getMyProductHandler = asyncHandler(async (req, res) => {
+  const { error } = productIdParamValidation.validate({ id: req.params.id });
+  if (error) {
+    const err = new Error(error.details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const product = await getMyProduct(req.params.id, req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Your product fetched',
+    data: product,
+  });
+});
+
 
 const updateProductHandler = asyncHandler(async (req, res) => {
   const paramValidation = productIdParamValidation.validate({ id: req.params.id });
@@ -148,6 +167,7 @@ export {
   createProductHandler as createProduct, 
   getProductsHandler as getProducts, 
   getProductHandler as getProduct, 
+  getMyProductHandler as getMyProduct,
   updateProductHandler as updateProduct, 
   deleteProductHandler as deleteProduct, 
   getMyProductsHandler as getMyProducts, 

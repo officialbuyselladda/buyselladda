@@ -68,13 +68,14 @@ categorySchema.virtual('children', {
 });
 
 // 🔥 AUTO SLUG
-categorySchema.pre('save', function(next) {
+categorySchema.pre('validate', function(next) {
   if (this.isModified('name')) {
     this.slug = this.name
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
       .trim();
   }
   next();

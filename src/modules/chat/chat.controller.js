@@ -5,7 +5,7 @@ import { io } from '../../config/socket.js';
 
 const createChat = asyncHandler(async (req, res) => {
   const { otherUserId } = req.body;
-  const participants = [req.user._id, otherUserId];
+  const participants = [req.user._id.toString(), otherUserId?.toString()];
   const chat = await chatService.createChat(participants);
   sendResponse(res, {
     success: true,
@@ -39,9 +39,14 @@ const getMessages = asyncHandler(async (req, res) => {
 
 const sendMessage = asyncHandler(async (req, res) => {
   const { chatId } = req.params;
-  const { text, image } = req.body;
-  const message = await chatService.sendMessage(chatId, req.user._id, { text, image });
-  io.to(chatId).emit('message', message);
+  const { text } = req.body;
+  const message = await chatService.sendMessage(chatId, req.user._id, { text });
+  io?.to(chatId).emit('receive_message', message);
+  io?.to(chatId).emit('message', message);
+  const chat = await chatService.getChat(chatId, req.user._id);
+  chat.participants.forEach((participant) => {
+    io?.to(`user:${participant._id}`).emit('chat_updated', { chatId, message });
+  });
   sendResponse(res, {
     success: true,
     statusCode: 201,

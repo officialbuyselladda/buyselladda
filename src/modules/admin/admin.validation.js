@@ -43,3 +43,13 @@ export const toggleUserBlockValidation = Joi.object({
   id: Joi.string().required()
 });
 
+export const createUserValidation = Joi.object({
+  name: Joi.string().trim().min(2).max(30).required(),
+  email: Joi.string().trim().email().required(),
+  password: Joi.string().min(6).max(128).required(),
+  phone: Joi.string().trim().allow('').optional(),
+  location: Joi.string().trim().allow('').optional(),
+  role: Joi.string().valid('user', 'admin').default('user'),
+  isBlocked: Joi.boolean().default(false)
+});
+

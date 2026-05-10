@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Product from './product.model.js';
 import User from '../user/user.model.js';
+import Category from '../category/category.model.js';
 import templates from '../../utils/emailTemplates.js';
 import sendEmail from '../../config/email.js';
 
@@ -41,6 +42,34 @@ export const cosineSimilarity = (vecA, vecB) => {
 };
 
 const bannedWords = ['spam', 'scam', 'free', 'hack', 'viagra']; // Add more
+const FALLBACK_CATEGORIES = ['Electronics', 'Vehicles', 'Property', 'Jobs', 'Services', 'Others'];
+
+const slugify = (value = '') => String(value)
+  .toLowerCase()
+  .trim()
+  .replace(/[^a-z0-9\s-]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/-+/g, '-');
+
+const normalizeCategory = async (category, { requireActive = false } = {}) => {
+  const raw = String(category || '').trim();
+  if (!raw) return null;
+
+  const normalizedSlug = slugify(raw);
+  const query = {
+    $or: [
+      { slug: normalizedSlug },
+      { name: { $regex: `^${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+    ],
+  };
+  if (requireActive) query.isActive = true;
+
+  const dbCategory = await Category.findOne(query).select('name isActive').lean();
+  if (dbCategory) return dbCategory.name;
+
+  const fallback = FALLBACK_CATEGORIES.find((cat) => slugify(cat) === normalizedSlug || cat.toLowerCase() === raw.toLowerCase());
+  return fallback || (requireActive ? null : raw);
+};
 
 const isImageSetSafe = (images = []) => {
   if (!Array.isArray(images) || images.length === 0) return false;
@@ -67,6 +96,10 @@ const generateSlug = (title) => {
 export const createProduct = async (productData) => {
   const user = await User.findById(productData.user).select('trustScore');
   if (!user) throw new Error('User not found');
+
+  const categoryName = await normalizeCategory(productData.category, { requireActive: true });
+  if (!categoryName) throw new Error('Please choose a valid active category');
+  productData.category = categoryName;
 
   // Banned words check
   const hasBanned = bannedWords.some(word =>
@@ -162,13 +195,34 @@ export const getProducts = async (query) => {
   let nextCursor = null;
   let hasMore = false;
   let geoUsed = false;
+  const categoryName = query.category ? await normalizeCategory(query.category, { requireActive: true }) : null;
+  if (query.category && !categoryName) {
+    return {
+      products: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        pages: 0,
+        nextCursor: null,
+        hasMore: false,
+        mode: cursor ? 'cursor' : 'page',
+        geoUsed: false,
+      },
+      warning: null,
+    };
+  }
+  const priceFilter = {};
+  if (query.minPrice !== undefined && query.minPrice !== null && query.minPrice !== '') priceFilter.$gte = Number(query.minPrice);
+  if (query.maxPrice !== undefined && query.maxPrice !== null && query.maxPrice !== '') priceFilter.$lte = Number(query.maxPrice);
 
   try {
     if (!isNaN(lat) && !isNaN(lng)) {
       // Try geospatial first
       const matchStage = {
         status: 'approved',
-        ...(query.category && { category: query.category })
+        ...(categoryName && { category: categoryName }),
+        ...(Object.keys(priceFilter).length && { price: priceFilter })
       };
 
       if (cursor && mongoose.Types.ObjectId.isValid(cursor)) {
@@ -213,11 +267,12 @@ export const getProducts = async (query) => {
   }
 
   // Fallback to standard query if geo failed or no coords
-  if (!geoUsed || !products || products.length === 0) {
+  if (!geoUsed || !products) {
     const filter = { status: 'approved' };
-    if (query.category) filter.category = query.category;
+    if (categoryName) filter.category = categoryName;
     if (query.location) filter.location = { $regex: query.location, $options: 'i' };
     if (query.search) filter.$text = { $search: query.search };
+    if (Object.keys(priceFilter).length) filter.price = priceFilter;
     if (cursor && mongoose.Types.ObjectId.isValid(cursor)) {
       filter._id = { $lt: new mongoose.Types.ObjectId(cursor) };
     }
@@ -245,8 +300,13 @@ export const getProducts = async (query) => {
   nextCursor = products.length ? products[products.length - 1]._id?.toString() : null;
 
   const countFilter = { status: 'approved' };
-  if (query.category) countFilter.category = query.category;
-  total = await Product.countDocuments(countFilter);
+  if (categoryName) countFilter.category = categoryName;
+  if (query.location) countFilter.location = { $regex: query.location, $options: 'i' };
+  if (Object.keys(priceFilter).length) countFilter.price = priceFilter;
+  if (query.search) countFilter.$text = { $search: query.search };
+  total = geoUsed && !query.search
+    ? products.length + (hasMore ? 1 : 0)
+    : await Product.countDocuments(countFilter);
 
   return {
     products,
@@ -280,13 +340,35 @@ export const getProduct = async (id) => {
   return productWithSeller;
 };
 
+export const getMyProduct = async (id, userId) => {
+  const product = await Product.findOne({ _id: id, user: userId })
+    .populate('user', 'name avatar email');
+  if (!product) throw new Error('Product not found');
+  return product;
+};
+
 export const updateProduct = async (id, updateData, userId) => {
   const product = await Product.findOne({ _id: id, user: userId });
   if (!product) throw new Error('Product not found');
+  if (updateData.category) {
+    const categoryName = await normalizeCategory(updateData.category, { requireActive: true });
+    if (!categoryName) throw new Error('Please choose a valid active category');
+    updateData.category = categoryName;
+  }
+  if (product.status === 'rejected' || product.status === 'approved') {
+    updateData.status = 'pending';
+  }
   Object.assign(product, updateData);
   if (updateData.title || updateData.description) {
     const contentText = `${product.title} ${product.description}`.toLowerCase();
     product.searchVector = computeTFIDF(contentText);
+  }
+  if (updateData.location && (!updateData.locationCoords || !updateData.locationCoords.coordinates?.length)) {
+    const geocodeService = (await import('../geocode/geocode.service.js')).default;
+    const coordinates = await geocodeService.forwardGeocode(updateData.location);
+    if (coordinates && coordinates.length === 2) {
+      product.locationCoords = { type: 'Point', coordinates };
+    }
   }
   await product.save();
   return product.populate('user', 'name avatar');
@@ -364,7 +446,9 @@ const inferCategoryFromSearch = (search = '') => {
 export const getRecommendations = async (query = {}) => {
   const limit = Math.min(parseInt(query.limit, 10) || 10, 30);
   const inferredCategory = inferCategoryFromSearch(query.search);
-  const category = query.category || inferredCategory;
+  const category = query.category
+    ? await normalizeCategory(query.category, { requireActive: true })
+    : inferredCategory;
 
   let filter = { status: 'approved' };
   if (category) filter.category = category;

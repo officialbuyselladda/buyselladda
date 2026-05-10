@@ -40,6 +40,14 @@ const userSchema = mongoose.Schema({
     url: String,
   },
   location: String,
+  lastSeen: {
+    type: Date,
+    default: Date.now,
+  },
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   trustScore: {
     type: Number,
     default: 0,

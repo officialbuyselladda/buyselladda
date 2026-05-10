@@ -1,4 +1,6 @@
 import User from './user.model.js';
+import UserReport from './userReport.model.js';
+import Product from '../product/product.model.js';
 
 const getUser = async (id) => {
   const user = await User.findById(id).select('-password');
@@ -6,6 +8,62 @@ const getUser = async (id) => {
     throw new Error('User not found');
   }
   return user;
+};
+
+const getPublicProfile = async (profileUserId, viewerId) => {
+  const user = await User.findById(profileUserId).select('name email phone avatar location trustScore createdAt lastSeen isBlocked blockedUsers');
+  if (!user) throw new Error('User not found');
+
+  const viewer = await User.findById(viewerId).select('blockedUsers');
+  const totalProducts = await Product.countDocuments({ user: profileUserId, status: { $ne: 'rejected' } });
+  const approvedProducts = await Product.countDocuments({ user: profileUserId, status: 'approved' });
+
+  const userObject = user.toObject();
+  return {
+    ...userObject,
+    blockedUsers: undefined,
+    isBlockedByMe: Boolean(viewer?.blockedUsers?.some((blockedId) => blockedId.toString() === profileUserId.toString())),
+    stats: {
+      totalProducts,
+      approvedProducts,
+    },
+  };
+};
+
+const toggleBlockUser = async (userId, targetUserId) => {
+  if (userId.toString() === targetUserId.toString()) throw new Error('You cannot block yourself');
+
+  const user = await User.findById(userId).select('blockedUsers');
+  const targetUser = await User.findById(targetUserId).select('_id role');
+  if (!user || !targetUser) throw new Error('User not found');
+
+  const isBlocked = user.blockedUsers.some((blockedId) => blockedId.toString() === targetUserId.toString());
+  if (isBlocked) {
+    user.blockedUsers = user.blockedUsers.filter((blockedId) => blockedId.toString() !== targetUserId.toString());
+  } else {
+    user.blockedUsers.push(targetUserId);
+  }
+
+  await user.save();
+  return { blocked: !isBlocked };
+};
+
+const reportUser = async (reporterId, reportedUserId, data = {}) => {
+  if (reporterId.toString() === reportedUserId.toString()) throw new Error('You cannot report yourself');
+
+  const reportedUser = await User.findById(reportedUserId).select('_id');
+  if (!reportedUser) throw new Error('User not found');
+
+  const reason = String(data.reason || '').trim();
+  if (!reason) throw new Error('Report reason is required');
+
+  return UserReport.create({
+    reporter: reporterId,
+    reportedUser: reportedUserId,
+    chat: data.chatId || undefined,
+    reason,
+    details: String(data.details || '').trim(),
+  });
 };
 
 const updateUser = async (id, updateData) => {
@@ -79,5 +137,5 @@ const getProfileStats = async (userId) => {
   };
 };
 
-export default { getUser, updateUser, getProfileStats };
+export default { getUser, getPublicProfile, updateUser, getProfileStats, toggleBlockUser, reportUser };
 

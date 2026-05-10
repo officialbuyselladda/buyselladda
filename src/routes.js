@@ -9,6 +9,7 @@ import geocodeRoutes from './modules/geocode/geocode.routes.js';
 import categoryRoutes from './modules/category/category.routes.js';
 import favoriteRoutes from './modules/favorite/favorite.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
+import contentRoutes from './modules/content/content.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/geocode', geocodeRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/content', contentRoutes);
 
 export default router;

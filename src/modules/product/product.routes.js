@@ -12,6 +12,7 @@ const router = Router();
 router.get('/', asyncHandler(productController.getProducts));
 router.get('/recommendations', asyncHandler(productController.getRecommendations));
 router.get('/my-products', auth, asyncHandler(productController.getMyProducts));
+router.get('/my-products/:id', auth, asyncHandler(productController.getMyProduct));
 router.get('/:id', asyncHandler(productController.getProduct));
 
 // Contact product seller - creates chat with seller
@@ -40,7 +41,7 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
   }
   
   // Create or find chat with seller (pass productId so same product = same chat)
-  const participants = [req.user._id, sellerId];
+  const participants = [req.user._id.toString(), sellerId.toString()];
   const chat = await chatService.createChat(participants, productId);
   
   sendResponse(res, {

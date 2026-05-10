@@ -1,16 +1,64 @@
 import Notification from './notification.model.js';
-import asyncHandler from '../../utils/asyncHandler.js';
 import { NotFoundError } from '../../utils/errorHandler.js';
+import User from '../user/user.model.js';
+import sendEmail from '../../config/email.js';
 
-const createNotification = asyncHandler(async (userId, notificationData) => {
+const createNotification = async (userId, notificationData) => {
   const notification = await Notification.create({
     ...notificationData,
     user: userId
   });
   return notification;
-});
+};
 
-const getUserNotifications = asyncHandler(async (userId, query = {}) => {
+const notificationEmailHtml = ({ title, message }) => `
+  <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937">
+    <h2 style="color:#059669;margin-bottom:12px">${title}</h2>
+    <p>${String(message).replace(/\n/g, '<br/>')}</p>
+    <p style="margin-top:24px;color:#6b7280;font-size:13px">DealKro Team</p>
+  </div>
+`;
+
+const createAdminNotification = async (payload = {}) => {
+  const {
+    user,
+    users = [],
+    sendToAll = false,
+    sendEmail: shouldSendEmail = true,
+    ...notificationData
+  } = payload;
+
+  const filter = sendToAll
+    ? { role: 'user', isBlocked: { $ne: true } }
+    : { _id: { $in: [...new Set([user, ...users].filter(Boolean))] } };
+
+  const recipients = await User.find(filter).select('name email').lean();
+  if (recipients.length === 0) throw new NotFoundError('No users found for notification');
+
+  const notifications = await Notification.insertMany(recipients.map((recipient) => ({
+    ...notificationData,
+    type: notificationData.type || 'system',
+    user: recipient._id,
+  })));
+
+  if (shouldSendEmail) {
+    await Promise.allSettled(recipients
+      .filter((recipient) => recipient.email)
+      .map((recipient) => sendEmail(
+        recipient.email,
+        notificationData.title,
+        notificationEmailHtml(notificationData)
+      )));
+  }
+
+  return {
+    notifications,
+    recipientsCount: recipients.length,
+    emailQueued: shouldSendEmail,
+  };
+};
+
+const getUserNotifications = async (userId, query = {}) => {
   const { page = 1, limit = 20, read = null, type, priority } = query;
   const skip = (page - 1) * limit;
 
@@ -32,6 +80,10 @@ const getUserNotifications = asyncHandler(async (userId, query = {}) => {
 
   return {
     notifications,
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    pages: Math.ceil(total / limit),
     pagination: {
       page,
       limit,
@@ -40,9 +92,9 @@ const getUserNotifications = asyncHandler(async (userId, query = {}) => {
       unreadCount
     }
   };
-});
+};
 
-const markAsRead = asyncHandler(async (userId, notificationId) => {
+const markAsRead = async (userId, notificationId) => {
   const notification = await Notification.findOneAndUpdate(
     { _id: notificationId, user: userId },
     { isRead: true },
@@ -51,21 +103,21 @@ const markAsRead = asyncHandler(async (userId, notificationId) => {
   
   if (!notification) throw new NotFoundError('Notification not found');
   return notification;
-});
+};
 
-const markAllAsRead = asyncHandler(async (userId) => {
+const markAllAsRead = async (userId) => {
   const result = await Notification.updateMany(
     { user: userId, isRead: false },
     { isRead: true }
   );
   return result;
-});
+};
 
-const getUnreadCount = asyncHandler(async (userId) => {
+const getUnreadCount = async (userId) => {
   return await Notification.countDocuments({ user: userId, isRead: false });
-});
+};
 
-const getAdminNotifications = asyncHandler(async (query) => {
+const getAdminNotifications = async (query) => {
   const { page = 1, limit = 20, search, user, read, type, priority } = query;
   const skip = (page - 1) * limit;
 
@@ -101,14 +153,22 @@ const getAdminNotifications = asyncHandler(async (query) => {
       pages: Math.ceil(total / limit)
     }
   };
-});
+};
+
+const deleteNotificationAdmin = async (id) => {
+  const notification = await Notification.findById(id);
+  if (!notification) throw new NotFoundError('Notification not found');
+  await notification.deleteOne();
+};
 
 export {
   createNotification,
+  createAdminNotification,
   getUserNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
-  getAdminNotifications
+  getAdminNotifications,
+  deleteNotificationAdmin
 };
 

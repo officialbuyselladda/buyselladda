@@ -12,6 +12,7 @@ router.patch('/:id/read', authMiddleware, notificationController.markAsRead);
 // Admin routes
 router.post('/', authMiddleware, adminMiddleware, notificationController.createNotification);
 router.get('/admin/list', authMiddleware, adminMiddleware, notificationController.getAdminNotifications);
+router.delete('/admin/:id', authMiddleware, adminMiddleware, notificationController.deleteNotificationAdmin);
 
 export default router;
 

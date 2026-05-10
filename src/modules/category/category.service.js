@@ -3,8 +3,16 @@ import { NotFoundError, ValidationError } from '../../utils/errorHandler.js';
 
 // ✅ CREATE
 const createCategory = async (categoryData) => {
-  const category = await Category.create(categoryData);
-  return category;
+  try {
+    if (categoryData.parent === '') categoryData.parent = null;
+    const category = await Category.create(categoryData);
+    return category;
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new ValidationError('Category with this name already exists');
+    }
+    throw error;
+  }
 };
 
 // ✅ GET BY ID
@@ -30,22 +38,8 @@ const getCategoryBySlug = async (slug, options = {}) => {
 
   // 🔥 FIX: products count
   if (options.withProductsCount) {
-    const result = await Category.aggregate([
-      { $match: { _id: category._id } },
-      {
-        $lookup: {
-          from: 'products',
-          let: { catId: '$_id' },
-          pipeline: [
-            { $match: { $expr: { $eq: ['$category', '$$catId'] } } }
-          ],
-          as: 'products'
-        }
-      },
-      { $addFields: { productsCount: { $size: '$products' } } }
-    ]);
-
-    category.productsCount = result?.[0]?.productsCount || 0;
+    const Product = (await import('../product/product.model.js')).default;
+    category.productsCount = await Product.countDocuments({ category: category.name, status: 'approved' });
   }
 
   return category;
@@ -95,7 +89,8 @@ const listCategories = async (query = {}) => {
 
 // ✅ UPDATE
 const updateCategory = async (id, updateData) => {
-  const category = await Category.findByIdAndUpdate(id, updateData, { new: true });
+  if (updateData.parent === '') updateData.parent = null;
+  const category = await Category.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
   if (!category) throw new NotFoundError('Category not found');
 
@@ -126,12 +121,20 @@ const getCategoryTree = async () => {
     .sort('sortOrder')
     .lean();
 
+  const Product = (await import('../product/product.model.js')).default;
+  const productCounts = await Product.aggregate([
+    { $match: { status: 'approved', category: { $in: categories.map((cat) => cat.name) } } },
+    { $group: { _id: '$category', count: { $sum: 1 } } }
+  ]);
+  const countMap = {};
+  productCounts.forEach((item) => { countMap[item._id] = item.count; });
+
   // 🔥 SAFE TREE BUILD (NO POPULATE CRASH)
   const map = {};
   const roots = [];
 
   categories.forEach(cat => {
-    map[cat._id] = { ...cat, children: [] };
+    map[cat._id] = { ...cat, productsCount: countMap[cat.name] || 0, children: [] };
   });
 
   categories.forEach(cat => {
@@ -176,7 +179,7 @@ const listCategoriesAdmin = async ({ page = 1, limit = 10, search, status }) => 
   const Product = (await import('../product/product.model.js')).default;
   const categoryNames = categories.map(c => c.name);
   const productCounts = await Product.aggregate([
-    { $match: { category: { $in: categoryNames }, status: { $ne: 'deleted' } } },
+    { $match: { category: { $in: categoryNames }, status: 'approved' } },
     { $group: { _id: '$category', count: { $sum: 1 } } }
   ]);
   

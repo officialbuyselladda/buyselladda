@@ -32,5 +32,35 @@ const getProfileStats = asyncHandler(async (req, res) => {
   });
 });
 
-export { getMe, updateProfile, getProfileStats };
+const getPublicProfile = asyncHandler(async (req, res) => {
+  const profile = await userService.getPublicProfile(req.params.id, req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User profile fetched',
+    data: profile,
+  });
+});
+
+const toggleBlockUser = asyncHandler(async (req, res) => {
+  const result = await userService.toggleBlockUser(req.user._id, req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: result.blocked ? 'User blocked' : 'User unblocked',
+    data: result,
+  });
+});
+
+const reportUser = asyncHandler(async (req, res) => {
+  const report = await userService.reportUser(req.user._id, req.params.id, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'Report submitted',
+    data: report,
+  });
+});
+
+export { getMe, updateProfile, getProfileStats, getPublicProfile, toggleBlockUser, reportUser };
 
