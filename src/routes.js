@@ -10,6 +10,7 @@ import categoryRoutes from './modules/category/category.routes.js';
 import favoriteRoutes from './modules/favorite/favorite.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
 import contentRoutes from './modules/content/content.routes.js';
+import supportRoutes from './modules/support/support.routes.js';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/categories', categoryRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/content', contentRoutes);
+router.use('/support', supportRoutes);
 
 export default router;
