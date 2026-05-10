@@ -34,6 +34,7 @@ const updateProductValidation = Joi.object({
   location: Joi.string().trim().min(2).max(200).optional(),
   locationCoords: locationCoordsSchema.optional(),
   isBoosted: Joi.boolean().optional(),
+  status: Joi.string().valid('approved', 'paused', 'sold').optional(),
 }).min(1);
 
 const productIdParamValidation = Joi.object({
@@ -58,7 +59,7 @@ const myProductsQueryValidation = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   cursor: Joi.string().pattern(objectIdRegex).optional(),
-  status: Joi.string().valid('pending', 'approved', 'rejected', 'suspicious', 'sold').optional(),
+  status: Joi.string().valid('pending', 'approved', 'paused', 'rejected', 'suspicious', 'sold').optional(),
 }).unknown(false);
 
 const recommendationsQueryValidation = Joi.object({

@@ -350,6 +350,24 @@ export const getMyProduct = async (id, userId) => {
 export const updateProduct = async (id, updateData, userId) => {
   const product = await Product.findOne({ _id: id, user: userId });
   if (!product) throw new Error('Product not found');
+
+  const keys = Object.keys(updateData);
+  if (keys.length === 1 && keys[0] === 'status') {
+    const requestedStatus = updateData.status;
+    if (requestedStatus === 'paused' && product.status === 'approved') {
+      product.status = 'paused';
+    } else if (requestedStatus === 'approved' && product.status === 'paused') {
+      product.status = 'approved';
+    } else if (requestedStatus === 'sold') {
+      product.status = 'sold';
+    } else {
+      throw new Error('Invalid status change');
+    }
+    await product.save();
+    return product.populate('user', 'name avatar');
+  }
+
+  delete updateData.status;
   if (updateData.category) {
     const categoryName = await normalizeCategory(updateData.category, { requireActive: true });
     if (!categoryName) throw new Error('Please choose a valid active category');
@@ -392,7 +410,7 @@ export const getMyProducts = async (userId, query = {}) => {
   }
 
   let products = await Product.find(filter)
-    .select('title price images category createdAt status isBoosted user location')
+    .select('title description price images category condition createdAt updatedAt status views isBoosted user location')
     .populate('user', 'name avatar')
     .sort({ _id: -1 })
     .skip(cursor ? 0 : skip)
