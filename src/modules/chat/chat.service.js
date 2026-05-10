@@ -15,6 +15,14 @@ const getUserChats = async (userId) => {
   return chats;
 };
 
+const getChat = async (chatId, userId) => {
+  const chat = await Chat.findOne({ _id: chatId, participants: userId })
+    .populate('participants', 'name avatar email')
+    .populate('product', 'title price images');
+  if (!chat) throw new Error('Chat not found');
+  return chat;
+};
+
 const getMessages = async (chatId, userId) => {
   const chat = await Chat.findOne({ _id: chatId, participants: userId })
     .populate('product', 'title price images');
@@ -35,7 +43,10 @@ const getMessages = async (chatId, userId) => {
 
 const sendMessage = async (chatId, senderId, data) => {
   const chat = await Chat.findById(chatId);
-  if (!chat || !chat.participants.includes(senderId)) {
+  const isParticipant = chat?.participants.some((participantId) =>
+    participantId.toString() === senderId.toString()
+  );
+  if (!chat || !isParticipant) {
     throw new Error('Invalid chat');
   }
 
@@ -57,7 +68,9 @@ const createChat = async (participants, productId = null) => {
     query.product = productId;
   }
   
-  const chat = await Chat.findOne(query);
+  const chat = await Chat.findOne(query)
+    .populate('participants', 'name avatar email')
+    .populate('product', 'title price images');
   if (chat) return chat;
 
   // Create new chat
@@ -65,8 +78,11 @@ const createChat = async (participants, productId = null) => {
     participants,
     product: productId,
   });
-  return newChat;
+  return newChat.populate([
+    { path: 'participants', select: 'name avatar email' },
+    { path: 'product', select: 'title price images' },
+  ]);
 };
 
-export default { getUserChats, getMessages, sendMessage, createChat };
+export default { getUserChats, getChat, getMessages, sendMessage, createChat };
 

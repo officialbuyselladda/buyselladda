@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -86,6 +86,34 @@ const toggleUserBlock = asyncHandler(async (req, res) => {
   });
 });
 
+const updateUser = asyncHandler(async (req, res) => {
+  const paramValidation = userDetailValidation.validate({ id: req.params.id });
+  if (paramValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: paramValidation.error.details[0].message,
+    });
+  }
+
+  const bodyValidation = updateUserValidation.validate(req.body);
+  if (bodyValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: bodyValidation.error.details[0].message,
+    });
+  }
+
+  const user = await adminService.updateUser(req.params.id, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User updated',
+    data: user,
+  });
+});
+
 const deleteUser = asyncHandler(async (req, res) => {
   const { error } = deleteUserValidation.validate({ id: req.params.id });
   if (error) {
@@ -158,5 +186,5 @@ const rejectProduct = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserDetail, toggleUserBlock };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserDetail, toggleUserBlock, updateUser };
 

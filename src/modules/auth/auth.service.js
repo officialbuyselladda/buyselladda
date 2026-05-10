@@ -3,7 +3,7 @@ import User from '../user/user.model.js';
 import generateToken from '../../utils/generateToken.js';
 
 const register = async (userData) => {
-  const { name, email, password } = userData;
+  const { name, email, password, phone = '' } = userData;
 
   try {
     // Check if user already exists
@@ -21,8 +21,10 @@ const register = async (userData) => {
       name,
       email,
       password: hashedPassword,
+      phone,
     });
-    return user;
+    const token = generateToken(user._id);
+    return { user, token };
   } catch (error) {
     if (error.statusCode) {
       throw error;
@@ -32,7 +34,6 @@ const register = async (userData) => {
       err.statusCode = 409;
       throw err;
     }
-    console.error('Create user error:', error);
     const err = new Error('Could not create user. Please try again later.');
     err.statusCode = 500;
     throw err;
@@ -40,18 +41,14 @@ const register = async (userData) => {
 };
 
 const login = async ({ email, password }) => {
-  console.log('Login attempt for:', email); // Debug log
   if (!password) {
     throw new Error('Password required');
   }
   const user = await User.findOne({ email }).select('+password');
-  console.log('User found:', !!user); // Debug log
   if (!user || !user.password) {
-    console.log('No user or password missing');
     throw new Error('Invalid credentials');
   }
   const isMatch = await bcrypt.compare(password, user.password);
-  console.log('Password match:', isMatch); // Debug log
   if (!isMatch) {
     throw new Error('Invalid credentials');
   }

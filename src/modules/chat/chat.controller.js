@@ -27,17 +27,19 @@ const getChats = asyncHandler(async (req, res) => {
 
 const getMessages = asyncHandler(async (req, res) => {
   const { chatId } = req.params;
+  const chat = await chatService.getChat(chatId, req.user._id);
   const messages = await chatService.getMessages(chatId, req.user._id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Messages fetched',
-    data: messages,
+    data: { chat, messages },
   });
 });
 
 const sendMessage = asyncHandler(async (req, res) => {
-  const { chatId, text, image } = req.body;
+  const { chatId } = req.params;
+  const { text, image } = req.body;
   const message = await chatService.sendMessage(chatId, req.user._id, { text, image });
   io.to(chatId).emit('message', message);
   sendResponse(res, {

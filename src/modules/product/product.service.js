@@ -121,9 +121,9 @@ export const createProduct = async (productData) => {
 
 // Generate unique slug to prevent duplicate key errors
   const slug = generateSlug(productData.title);
-  console.log('Generated slug:', slug);
+  const contentHash = `${productData.user}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
-  const product = await Product.create({ ...productData, status, searchVector, slug });
+  const product = await Product.create({ ...productData, status, searchVector, slug, contentHash });
   
   // Send notification email
   let subject, html;

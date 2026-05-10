@@ -93,6 +93,26 @@ const toggleUserBlock = async (id) => {
   return user;
 };
 
+const updateUser = async (id, updateData) => {
+  const allowed = {};
+  ['name', 'email', 'phone', 'role', 'isBlocked'].forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(updateData, key)) {
+      allowed[key] = updateData[key];
+    }
+  });
+
+  const user = await User.findById(id);
+  if (!user || user.role === 'admin') {
+    throw new Error('User not found or admin cannot be edited here');
+  }
+
+  Object.assign(user, allowed);
+  await user.save();
+  const safeUser = user.toObject();
+  delete safeUser.password;
+  return safeUser;
+};
+
 const getUserDetail = async (id) => {
   const user = await User.findById(id).populate('products').select('-password').lean();
   if (!user) throw new Error('User not found');
@@ -137,6 +157,8 @@ export default {
   rejectProduct, 
   listProducts, 
   listUsers, 
-  getUserDetail 
+  getUserDetail,
+  toggleUserBlock,
+  updateUser
 };
 

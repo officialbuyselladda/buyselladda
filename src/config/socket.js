@@ -26,6 +26,7 @@ const initSocket = (server) => {
 
     socket.on('join-room', handleJoinRoom); // existing
     socket.on('join_room', handleJoinRoom); // standardized
+    socket.on('joinChat', handleJoinRoom); // frontend compatibility
 
     // Pub-Sub message flow: client send -> server persist -> room broadcast
     socket.on('send_message', async (payload = {}, ack) => {

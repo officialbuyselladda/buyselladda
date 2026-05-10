@@ -32,8 +32,11 @@ export const rejectProductValidation = Joi.object({
 
 export const updateUserValidation = Joi.object({
   name: Joi.string().optional(),
+  email: Joi.string().email().optional(),
   phone: Joi.string().optional(),
-  location: Joi.string().optional()
+  location: Joi.string().optional(),
+  role: Joi.string().valid('user', 'admin').optional(),
+  isBlocked: Joi.boolean().optional()
 }).min(1);
 
 export const toggleUserBlockValidation = Joi.object({

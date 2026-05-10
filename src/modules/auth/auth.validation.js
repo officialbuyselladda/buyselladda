@@ -21,6 +21,7 @@ const registerValidation = Joi.object({
       'string.min': 'Password must be at least {#limit} characters',
       'string.max': 'Password cannot exceed {#limit} characters',
     }),
+  phone: Joi.string().trim().allow('', null).optional(),
 });
 
 const loginValidation = Joi.object({

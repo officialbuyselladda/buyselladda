@@ -22,7 +22,7 @@ router.put('/products/:id/approve', auth, admin, asyncHandler(adminController.ap
 router.put('/products/:id/reject', auth, admin, asyncHandler(adminController.rejectProduct));
 
 // Categories (admin management)
-router.get('/categories', auth, admin, asyncHandler(categoryController.listCategories));
+router.get('/categories', auth, admin, asyncHandler(categoryController.listCategoriesAdmin));
 router.post('/categories', auth, admin, asyncHandler(categoryController.createCategory));
 router.patch('/categories/:id', auth, admin, asyncHandler(categoryController.updateCategory));
 router.delete('/categories/:id', auth, admin, asyncHandler(categoryController.deleteCategory));

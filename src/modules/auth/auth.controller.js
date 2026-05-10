@@ -15,14 +15,14 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 
-  const user = await authService.register(req.body);
+  const { user, token } = await authService.register(req.body);
   // Send welcome email
   await sendEmail(user.email, 'Welcome to DealKro', templates.welcome(user.name));
   sendResponse(res, {
     success: true,
     statusCode: 201,
     message: 'User registered successfully',
-    data: { user: { id: user._id, name: user.name, email: user.email } },
+    data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role }, token },
   });
 });
 

@@ -63,7 +63,7 @@ const myProductsQueryValidation = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   cursor: Joi.string().pattern(objectIdRegex).optional(),
-// status: Joi.string().valid('pending', 'approved', 'rejected', 'suspicious').optional(),
+  status: Joi.string().valid('pending', 'approved', 'rejected', 'suspicious', 'sold').optional(),
 }).unknown(false);
 
 const recommendationsQueryValidation = Joi.object({

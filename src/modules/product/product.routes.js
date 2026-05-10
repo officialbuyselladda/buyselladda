@@ -4,6 +4,7 @@ import auth from '../../middleware/auth.middleware.js';
 import { createProductPostLimiter } from '../../middleware/rateLimiter.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import chatService from '../chat/chat.service.js';
+import { getProduct as getProductById } from './product.service.js';
 import sendResponse from '../../utils/responseHandler.js';
 
 const router = Router();
@@ -18,7 +19,7 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
   const { id: productId } = req.params;
   
   // Get product to find seller
-  const product = await productController.getProduct(productId);
+  const product = await getProductById(productId);
   if (!product) {
     return sendResponse(res, {
       success: false,
@@ -28,7 +29,9 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
   }
   
   // Can't chat with yourself
-  if (product.user.toString() === req.user._id.toString()) {
+  const sellerId = product.user?._id || product.user;
+
+  if (sellerId.toString() === req.user._id.toString()) {
     return sendResponse(res, {
       success: false,
       statusCode: 400,
@@ -37,7 +40,7 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
   }
   
   // Create or find chat with seller (pass productId so same product = same chat)
-  const participants = [req.user._id, product.user];
+  const participants = [req.user._id, sellerId];
   const chat = await chatService.createChat(participants, productId);
   
   sendResponse(res, {

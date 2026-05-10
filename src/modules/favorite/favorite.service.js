@@ -1,9 +1,8 @@
 import Favorite from './favorite.model.js';
 import Product from '../product/product.model.js';
-import asyncHandler from '../../utils/asyncHandler.js';
 import { NotFoundError } from '../../utils/errorHandler.js';
 
-const toggleFavorite = asyncHandler(async (userId, productId) => {
+const toggleFavorite = async (userId, productId) => {
   // Check if product exists
   const product = await Product.findById(productId);
   if (!product) throw new NotFoundError('Product not found');
@@ -20,9 +19,9 @@ const toggleFavorite = asyncHandler(async (userId, productId) => {
     const favorite = await Favorite.create({ user: userId, product: productId });
     return { action: 'added', favorite };
   }
-});
+};
 
-const getUserFavorites = asyncHandler(async (userId, query = {}) => {
+const getUserFavorites = async (userId, query = {}) => {
   const { page = 1, limit = 20, search } = query;
   const skip = (page - 1) * limit;
 
@@ -53,14 +52,14 @@ const getUserFavorites = asyncHandler(async (userId, query = {}) => {
       pages: Math.ceil(total / limit)
     }
   };
-});
+};
 
-const getFavoriteCount = asyncHandler(async (userId) => {
+const getFavoriteCount = async (userId) => {
   return await Favorite.countDocuments({ user: userId });
-});
+};
 
 // Admin: List all favorites with pagination
-const listFavoritesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, userId }) => {
+const listFavoritesAdmin = async ({ page = 1, limit = 10, search, userId }) => {
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 10, 100);
   const skip = (pageNum - 1) * limitNum;
@@ -100,15 +99,15 @@ const listFavoritesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, u
     limit: limitNum,
     pages: Math.ceil(total / limitNum)
   };
-});
+};
 
 // Admin: Delete a favorite by ID
-const deleteFavorite = asyncHandler(async (id) => {
+const deleteFavorite = async (id) => {
   const favorite = await Favorite.findById(id);
   if (!favorite) throw new NotFoundError('Favorite not found');
   await favorite.deleteOne();
   return { message: 'Favorite deleted successfully' };
-});
+};
 
 export {
   toggleFavorite,

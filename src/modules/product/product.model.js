@@ -56,14 +56,18 @@ const productSchema = mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'suspicious'],
+    enum: ['pending', 'approved', 'rejected', 'suspicious', 'deleted', 'sold'],
     default: 'pending',
   },
-slug: {
+  slug: {
     type: String,
     lowercase: true,
     trim: true,
     default: null  // Default to null, service generates unique slug
+  },
+  contentHash: {
+    type: String,
+    default: null,
   },
   searchVector: [
     {

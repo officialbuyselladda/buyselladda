@@ -6,8 +6,8 @@ import * as notificationController from './notification.controller.js';
 
 router.get('/', authMiddleware, notificationController.getUserNotifications);
 router.get('/unread-count', authMiddleware, notificationController.getUnreadCount);
-router.patch('/:id/read', authMiddleware, notificationController.markAsRead);
 router.patch('/read-all', authMiddleware, notificationController.markAllAsRead);
+router.patch('/:id/read', authMiddleware, notificationController.markAsRead);
 
 // Admin routes
 router.post('/', authMiddleware, adminMiddleware, notificationController.createNotification);

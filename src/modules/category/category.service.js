@@ -1,15 +1,14 @@
 import Category from './category.model.js';
 import { NotFoundError, ValidationError } from '../../utils/errorHandler.js';
-import asyncHandler from '../../utils/asyncHandler.js';
 
 // ✅ CREATE
-const createCategory = asyncHandler(async (categoryData) => {
+const createCategory = async (categoryData) => {
   const category = await Category.create(categoryData);
   return category;
-});
+};
 
 // ✅ GET BY ID
-const getCategoryById = asyncHandler(async (id) => {
+const getCategoryById = async (id) => {
   const category = await Category.findById(id)
     .populate('children', 'name slug icon productsCount')
     .lean();
@@ -17,10 +16,10 @@ const getCategoryById = asyncHandler(async (id) => {
   if (!category) throw new NotFoundError('Category not found');
 
   return category;
-});
+};
 
 // ✅ GET BY SLUG
-const getCategoryBySlug = asyncHandler(async (slug, options = {}) => {
+const getCategoryBySlug = async (slug, options = {}) => {
   const query = { slug, isActive: true };
 
   const category = await Category.findOne(query)
@@ -50,10 +49,10 @@ const getCategoryBySlug = asyncHandler(async (slug, options = {}) => {
   }
 
   return category;
-});
+};
 
 // ✅ LIST
-const listCategories = asyncHandler(async (query = {}) => {
+const listCategories = async (query = {}) => {
   const {
     parent = null,
     search,
@@ -92,19 +91,19 @@ const listCategories = asyncHandler(async (query = {}) => {
       pages: Math.ceil(total / limit)
     }
   };
-});
+};
 
 // ✅ UPDATE
-const updateCategory = asyncHandler(async (id, updateData) => {
+const updateCategory = async (id, updateData) => {
   const category = await Category.findByIdAndUpdate(id, updateData, { new: true });
 
   if (!category) throw new NotFoundError('Category not found');
 
   return category;
-});
+};
 
 // ✅ DELETE
-const deleteCategory = asyncHandler(async (id) => {
+const deleteCategory = async (id) => {
   const category = await Category.findById(id);
 
   if (!category) throw new NotFoundError('Category not found');
@@ -118,10 +117,10 @@ const deleteCategory = asyncHandler(async (id) => {
   await category.deleteOne();
 
   return { message: 'Category deleted successfully' };
-});
+};
 
 // ✅ 🔥 FINAL FIX: CATEGORY TREE (NO 500 ERROR)
-const getCategoryTree = asyncHandler(async () => {
+const getCategoryTree = async () => {
 
   const categories = await Category.find({ isActive: true })
     .sort('sortOrder')
@@ -144,10 +143,10 @@ const getCategoryTree = asyncHandler(async () => {
   });
 
   return roots;
-});
+};
 
 // ✅ ADMIN LIST - includes all categories (active and inactive)
-const listCategoriesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, status }) => {
+const listCategoriesAdmin = async ({ page = 1, limit = 10, search, status }) => {
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 10, 100);
   const skip = (pageNum - 1) * limitNum;
@@ -175,17 +174,17 @@ const listCategoriesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, 
   
   // Get product counts for each category
   const Product = (await import('../product/product.model.js')).default;
-  const categoryIds = categories.map(c => c._id);
+  const categoryNames = categories.map(c => c.name);
   const productCounts = await Product.aggregate([
-    { $match: { category: { $in: categoryIds }, status: { $ne: 'deleted' } } },
+    { $match: { category: { $in: categoryNames }, status: { $ne: 'deleted' } } },
     { $group: { _id: '$category', count: { $sum: 1 } } }
   ]);
   
   const countMap = {};
-  productCounts.forEach(p => { countMap[p._id.toString()] = p.count; });
+  productCounts.forEach(p => { countMap[p._id] = p.count; });
   
   categories.forEach(c => {
-    c.productCount = countMap[c._id.toString()] || 0;
+    c.productCount = countMap[c.name] || 0;
     c.status = c.isActive ? 'active' : 'inactive';
   });
   
@@ -196,7 +195,7 @@ const listCategoriesAdmin = asyncHandler(async ({ page = 1, limit = 10, search, 
     limit: limitNum, 
     pages: Math.ceil(total / limitNum) 
   };
-});
+};
 
 export {
   createCategory,
@@ -208,3 +207,4 @@ export {
   deleteCategory,
   getCategoryTree
 };
+
