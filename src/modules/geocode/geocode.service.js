@@ -9,7 +9,7 @@ const reverseGeocode = async (lat, lng) => {
     try {
       const response = await fetch(nominatimUrl, {
         headers: {
-'User-Agent': 'DealKroApp/1.0 (admin@dealkro.com)'
+'User-Agent': 'BuySellAddaApp/1.0 (admin@buyselladda.com)'
         }
       });
       const data = await response.json();
@@ -42,7 +42,7 @@ const forwardGeocode = async (location) => {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
     const response = await fetch(url, {
       headers: {
-'User-Agent': 'DealKroApp/1.0 (admin@dealkro.com)'
+'User-Agent': 'BuySellAddaApp/1.0 (admin@buyselladda.com)'
       }
     });
     if (!response.ok) return null;

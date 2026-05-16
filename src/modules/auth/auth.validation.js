@@ -33,8 +33,25 @@ const loginValidation = Joi.object({
   password: Joi.string().min(1).required()
     .messages({
       'string.empty': 'Password is required',
+  }),
+});
+
+const forgotPasswordValidation = Joi.object({
+  email: Joi.string().trim().email().required()
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
     }),
 });
 
-export { registerValidation, loginValidation };
+const resetPasswordValidation = Joi.object({
+  password: Joi.string().min(6).max(64).required()
+    .messages({
+      'string.empty': 'Password is required',
+      'string.min': 'Password must be at least {#limit} characters',
+      'string.max': 'Password cannot exceed {#limit} characters',
+    }),
+});
+
+export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation };
 

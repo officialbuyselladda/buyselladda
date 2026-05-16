@@ -1,4 +1,4 @@
-# <img src="https://i.ibb.co/d4v1q3jZ/logo.jpg" alt="DealKro" width="50" height="50"/> **DealKro Backend** - Production-Ready Classifieds API 🚀
+# <img src="/logo-1.png" alt="BuySellAdda" width="50" height="50"/> **BuySellAdda Backend** - Production-Ready Classifieds API 🚀
 
 <div align="center">
 
@@ -8,15 +8,15 @@
 ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&color=010101)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448D0?style=for-the-badge&logo=cloudinary)
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/dealkro-backend?style=social)](https://github.com/yourusername/dealkro-backend)
-[![GitHub license](https://img.shields.io/badge/license-MIT-green)](https://github.com/yourusername/dealkro-backend/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/yourusername/dealkro-backend)](https://github.com/yourusername/dealkro-backend/issues)
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/buyselladda-backend?style=social)](https://github.com/yourusername/buyselladda-backend)
+[![GitHub license](https://img.shields.io/badge/license-MIT-green)](https://github.com/yourusername/buyselladda-backend/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/yourusername/buyselladda-backend)](https://github.com/yourusername/buyselladda-backend/issues)
 
 </div>
 
 ## 🚀 **Production-Ready OLX Clone**
 
-**DealKro** is full-featured classifieds marketplace backend with **AI Auto-Moderation**, **Real-time Chat**, **Multi-Image Upload**, **Professional Email System** & **Admin Dashboard**!
+**BuySellAdda** is full-featured classifieds marketplace backend with **AI Auto-Moderation**, **Real-time Chat**, **Multi-Image Upload**, **Professional Email System** & **Admin Dashboard**!
 
 ### ✨ **Key Features**
 
@@ -57,7 +57,7 @@ cp .env.example .env
 
 ```
 # MongoDB Atlas (create free cluster)
-MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/dealkro?...
+MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/buyselladda?...
 
 # JWT (generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 JWT_SECRET=your-64-char-secret-here-change-this
@@ -78,7 +78,7 @@ NODEMAILER_PASS=your-app-password
 node seeders/adminSeeder.js
 ```
 ```
-✅ Admin created: admin@dealkro.com / admin123
+✅ Admin created: admin@buyselladda.com / admin123
 💡 Login: http://localhost:5173/login
 ```
 
@@ -87,7 +87,7 @@ node seeders/adminSeeder.js
 npm run dev
 ```
 ```
-🌟 DealKro running @ http://localhost:5000
+🌟 BuySellAdda running @ http://localhost:5000
 📊 MongoDB Connected: cluster0.xxxxx
 🔌 Socket Ready on port 5000
 ```

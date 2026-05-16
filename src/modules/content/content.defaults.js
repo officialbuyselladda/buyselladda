@@ -1,13 +1,13 @@
 const defaultSiteContent = {
   footer: {
-    brandName: 'DealKro',
-    logoUrl: 'https://i.ibb.co/d4v1q3jZ/logo.jpg',
-    tagline: 'Buy and sell locally.\nQuick, easy, safe.',
+    brandName: 'BuySellAdda',
+    logoUrl: '/logo-1.png',
+    tagline: 'Har Deal, Ek Nayi Shuruaat.\nBuy and sell locally with confidence.',
     trustTitle: 'Trusted by 10M+ users',
     trustSubtitle: "India's #1 buying & selling platform",
     bannerButtonText: 'Post Your Ad',
     bannerButtonPath: '/create-product',
-    copyrightText: 'DealKro. All rights reserved',
+    copyrightText: 'BuySellAdda. All rights reserved',
     columns: [
       {
         title: 'Buy & Sell',
@@ -75,18 +75,18 @@ const defaultSiteContent = {
     },
     terms: {
       title: 'Terms of Use',
-      subtitle: 'By using DealKro, you agree to these terms. Please read carefully.',
+      subtitle: 'By using BuySellAdda, you agree to these terms. Please read carefully.',
       accent: 'emerald',
       updatedText: 'January 1, 2025',
       sections: [
-        { heading: '1. Acceptance of Terms', body: 'These Terms govern your use of DealKro platform. Continued use means acceptance.' },
+        { heading: '1. Acceptance of Terms', body: 'These Terms govern your use of BuySellAdda platform. Continued use means acceptance.' },
         { heading: '2. User Conduct', body: 'No spam, illegal content, scams, harassment, or counterfeit goods. Respect other users and post genuine local buying and selling listings.' },
         { heading: '3. Account Responsibility', body: "Keep your login secure. You're responsible for all activity under your account." },
       ],
     },
     help: {
       title: 'Help',
-      subtitle: 'Find answers and get support for using DealKro.',
+      subtitle: 'Find answers and get support for using BuySellAdda.',
       accent: 'blue',
       updatedText: 'January 1, 2025',
       sections: [

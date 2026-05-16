@@ -10,7 +10,7 @@ import connectDB from '../src/config/db.js';
 import authService from '../src/modules/auth/auth.service.js';
 import User from '../src/modules/user/user.model.js';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@dealkro.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@buyselladda.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ADMIN_NAME = 'Super Admin';
 
@@ -43,7 +43,7 @@ const seedAdmin = async () => {
     console.log('📧 Email:', newAdmin.email);
     console.log('🔑 Password:', ADMIN_PASSWORD);
     console.log('🎉 Login: http://localhost:5173/admin/login');
-    console.log('\n💡 Pro tip: Add to .env:\nADMIN_EMAIL=admin@dealkro.com\nADMIN_PASSWORD=yoursecurepass\n');
+    console.log('\n💡 Pro tip: Add to .env:\nADMIN_EMAIL=admin@buyselladda.com\nADMIN_PASSWORD=yoursecurepass\n');
 
     process.exit(0);
   } catch (error) {

@@ -15,7 +15,7 @@ const notificationEmailHtml = ({ title, message }) => `
   <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937">
     <h2 style="color:#059669;margin-bottom:12px">${title}</h2>
     <p>${String(message).replace(/\n/g, '<br/>')}</p>
-    <p style="margin-top:24px;color:#6b7280;font-size:13px">DealKro Team</p>
+    <p style="margin-top:24px;color:#6b7280;font-size:13px">BuySellAdda Team</p>
   </div>
 `;
 

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function dropIndexes() {
-  const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dealkro';
+  const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/BuySellAdda';
   
   await mongoose.connect(MONGO_URI);
   console.log('Connected to MongoDB');

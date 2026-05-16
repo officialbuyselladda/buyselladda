@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import User from '../user/user.model.js';
 import generateToken from '../../utils/generateToken.js';
 
@@ -57,5 +58,42 @@ const login = async ({ email, password }) => {
   return { user: user.toObject({ versionKey: false }), token };
 };
 
-export default { register, login };
+const createPasswordResetToken = async (email) => {
+  const user = await User.findOne({ email: String(email).toLowerCase() }).select('+resetPasswordToken +resetPasswordExpire');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  if (user) {
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+  }
+
+  return { user, resetToken };
+};
+
+const resetPassword = async (token, password) => {
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  }).select('+password +resetPasswordToken +resetPasswordExpire');
+
+  if (!user) {
+    const error = new Error('Password reset link is invalid or expired.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  const authToken = generateToken(user._id);
+  return { user: user.toObject({ versionKey: false }), token: authToken };
+};
+
+export default { register, login, createPasswordResetToken, resetPassword };
 

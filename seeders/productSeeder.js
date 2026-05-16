@@ -132,7 +132,7 @@ const seedProducts = async () => {
     await Product.deleteMany({});
     console.log('🧹 Cleared all products');
 
-    const existingSeedUsers = await User.find({ email: { $regex: '@seed\\.dealkro\\.com$' } }).select('_id email');
+    const existingSeedUsers = await User.find({ email: { $regex: '@seed\\.BuySellAdda\\.com$' } }).select('_id email');
     if (existingSeedUsers.length) {
       await User.deleteMany({ _id: { $in: existingSeedUsers.map((u) => u._id) } });
       console.log(`🧹 Removed old seeded users: ${existingSeedUsers.length}`);
@@ -142,7 +142,7 @@ const seedProducts = async () => {
     for (let i = 1; i <= 6; i += 1) {
       const seedUser = await authService.register({
         name: `Seed Seller ${i}`,
-        email: `seller${i}@seed.dealkro.com`,
+        email: `seller${i}@seed.buyselladda.com`,
         password: 'seed123456',
       });
       seededUsers.push(seedUser);

@@ -21,7 +21,7 @@ const uploadImage = async (buffer, filename) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         resource_type: 'image',
-        folder: 'dealkro/products',
+        folder: 'buyselladda/products',
         public_id: buildPublicId(filename),
         overwrite: false,
         quality: 'auto',

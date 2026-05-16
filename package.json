@@ -1,7 +1,7 @@
 {
-  "name": "dealkro-backend",
+  "name": "buyselladda-backend",
   "version": "1.0.0",
-  "description": "Dealkro - OLX-like classifieds platform backend",
+  "description": "BuySellAdda - OLX-like classifieds platform backend",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "dealkro",
+    "BuySellAdda",
     "classifieds",
     "chat",
     "ecommerce"
