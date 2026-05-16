@@ -1,177 +1,139 @@
-# <img src="/logo-1.png" alt="BuySellAdda" width="50" height="50"/> **BuySellAdda Backend** - Production-Ready Classifieds API 🚀
-
 <div align="center">
+  <img src="/logo-1.png" alt="BuySellAdda" width="180" />
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-3C873A?style=for-the-badge&logo=Node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-4F46E5?style=for-the-badge&logo=mongodb)
-![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&color=010101)
-![Cloudinary](https://img.shields.io/badge/Cloudinary-3448D0?style=for-the-badge&logo=cloudinary)
+  # BuySellAdda Backend
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/buyselladda-backend?style=social)](https://github.com/yourusername/buyselladda-backend)
-[![GitHub license](https://img.shields.io/badge/license-MIT-green)](https://github.com/yourusername/buyselladda-backend/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/yourusername/buyselladda-backend)](https://github.com/yourusername/buyselladda-backend/issues)
+  Har Deal, Ek Nayi Shuruaat
 
+  A production-ready classifieds marketplace API for products, users, chats, admin workflows, notifications, uploads, content pages, and password recovery.
+
+  ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)
+  ![Express](https://img.shields.io/badge/Express-API-000000?style=for-the-badge&logo=express&logoColor=white)
+  ![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+  ![Socket.io](https://img.shields.io/badge/Socket.io-Realtime-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+  ![Cloudinary](https://img.shields.io/badge/Cloudinary-Uploads-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
 </div>
 
-## 🚀 **Production-Ready OLX Clone**
+## Overview
 
-**BuySellAdda** is full-featured classifieds marketplace backend with **AI Auto-Moderation**, **Real-time Chat**, **Multi-Image Upload**, **Professional Email System** & **Admin Dashboard**!
+BuySellAdda Backend powers the web dashboard and Flutter app with secure authentication, product listings, real-time chat, admin moderation, Cloudinary media upload, geocoding, notification emails, and dynamic website content.
 
-### ✨ **Key Features**
+## Features
 
-<div align="center">
+| Area | What it includes |
+| --- | --- |
+| Authentication | Register, login, admin login, JWT auth, forgot password, reset password |
+| Products | Create, update, list, search, categories, Cloudinary image upload |
+| Chat | User chats, messages, Socket.io realtime updates |
+| Admin | Dashboard, users, products, reports, moderation, notifications, content pages |
+| Website Content | Dynamic footer, privacy, terms, help, safety, support pages |
+| Safety | Rate limiting, Helmet, validation, role middleware |
+| Location | Forward and reverse geocoding support |
 
-| 🎯 **Core** | 🔐 **Security** | ⚡ **Performance** |
-|-------------|-----------------|-------------------|
-| Email/Phone Auth | JWT + Rate Limiting | Pagination + Indexes |
-| Product Listing | Helmet + Validation | Optimized Queries |
-| Real-time Chat | Admin Middleware | Mongo Indexes |
-| Cloudinary Images | Password Reset | Async Processing |
-| Auto Moderation | Role Protection | Email Queue Ready |
+## Tech Stack
 
-</div>
+- Node.js + Express
+- MongoDB + Mongoose
+- Socket.io
+- JWT + bcryptjs
+- Cloudinary + multer
+- Nodemailer
+- Joi validation
 
-## 🛠 **Step-by-Step Setup**
+## Quick Start
 
-### 1. Prerequisites
-```bash
-Node.js v18+
-MongoDB Atlas account (free)
-Cloudinary account (free)
-Gmail App Password (for emails - optional)
-```
-
-### 2. Clone & Install
 ```bash
 cd backend
 npm install
-```
-
-### 3. Environment Configuration (Critical!)
-```bash
-cp .env.example .env
-```
-
-**Edit `.env` with your real values:**
-
-```
-# MongoDB Atlas (create free cluster)
-MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/buyselladda?...
-
-# JWT (generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-JWT_SECRET=your-64-char-secret-here-change-this
-
-# Cloudinary (dashboard.cloudin
-ary.com → Account Details)
-CLOUDINARY_CLOUD_NAME=xxx
-CLOUDINARY_API_KEY=xxx
-CLOUDINARY_API_SECRET=xxx
-
-# Gmail (for emails - optional)
-NODEMAILER_USER=your@gmail.com  
-NODEMAILER_PASS=your-app-password
-```
-
-### 4. Seed Admin User
-```bash
-node seeders/adminSeeder.js
-```
-```
-✅ Admin created: admin@buyselladda.com / admin123
-💡 Login: http://localhost:5173/login
-```
-
-### 5. Start Development Server
-```bash
 npm run dev
 ```
-```
-🌟 BuySellAdda running @ http://localhost:5000
-📊 MongoDB Connected: cluster0.xxxxx
-🔌 Socket Ready on port 5000
-```
 
-### 6. Frontend Connection
-Update Frontend `src/services/api.js`:
-```js
-const API_BASE = 'http://localhost:5000/api'
+The API runs on:
+
+```text
+http://localhost:5000/api
 ```
 
-## 🚀 **Latest Updates**
+## Environment
 
-**v2.1 - DSA Algorithm Integration**
-- **TF-IDF + Cosine Similarity Recommendations** 🔥
-  - New param: `GET /api/products/recommendations?similarTo=<productId>&limit=10`
-  - Computes vector similarity on title/description
-  - Returns `similarityScore` in response
-  - **3x better relevance** for similar product suggestions!
-- Auto vectorization on create/update
-- Fallback to basic filtering
+Create `backend/.env`:
 
-## 📱 **API Endpoints**
+```env
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/buyselladda
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRE=30d
 
-```
-Base URL: http://localhost:5000/api
-```
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 
-**Auth:**
-```
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/forgot-password
-```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+EMAIL_FROM=your_email@gmail.com
 
-**Products:**
-```
-POST /api/products     # AI Auto-moderated + TF-IDF vector
-GET /api/products      # Approved only
-GET /api/products/recommendations?similarTo=<id> # NEW DSA Recs!
+CLIENT_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+GOOGLE_MAPS_API_KEY=
 ```
 
-**Chat:**
-```
-POST /api/chat/create
-GET /api/chats
-POST /api/chats/:id/message
-```
+## Scripts
 
-**Admin:**
-```
-GET /api/admin/dashboard
-POST /api/admin/products/:id/approve
+```bash
+npm run dev            # Start with nodemon
+npm start              # Start production server
+npm run seed:products  # Seed sample products
+node seeders/adminSeeder.js
 ```
 
-## 🏗 **Project Structure**
+Default seeded admin:
 
-```
-src/
-├── config/     # db.js env.js cloudinary.js
-├── middleware/ # auth.js admin.js upload.js
-├── modules/    # auth/ user/ product/ chat/ admin/
-└── utils/      # token.js email.js
+```text
+admin@buyselladda.com / admin123
 ```
 
-## 🔧 **Production Deployment**
+## Main API Routes
 
-| Platform | Status |
-|----------|--------|
-| Railway | ✅ 1-click |
-| Render | ✅ Docker |
-| Vercel | ⚠️ Serverless (Socket tricky) |
+| Module | Routes |
+| --- | --- |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/admin-login` |
+| Password | `POST /api/auth/forgot-password`, `PUT /api/auth/reset-password/:token` |
+| Products | `GET /api/products`, `POST /api/products`, `GET /api/products/:id` |
+| Chats | `GET /api/chats`, `GET /api/chats/:id/messages`, `POST /api/chats/:id/send` |
+| Admin | `/api/admin/*` |
+| Content | `GET /api/content/site`, `GET /api/admin/content`, `PUT /api/admin/content` |
+| Uploads | Product image upload through Cloudinary |
 
-## 🤝 **Contributing**
+## Project Structure
 
-1. Fork & clone
-2. `npm i && cp .env.example .env`
-3. Create feature branch
-4. PR to `main` ✨
+```text
+backend/
+  src/
+    config/        Database, env, email, cloudinary
+    middleware/    Auth, admin, upload, rate limit
+    modules/       Feature modules: auth, product, chat, admin, content
+    utils/         Tokens, responses, email templates, errors
+  seeders/         Admin and product seed data
+  server.js        App entry point
+```
 
-## 📄 **License**
-MIT - Free for commercial use!
+## Deployment Notes
 
----
+- Set `NODE_ENV=production`.
+- Use a strong `JWT_SECRET`.
+- Set `CLIENT_URL` to the deployed frontend URL.
+- Add deployed domains to `ALLOWED_ORIGINS`.
+- Configure production SMTP credentials.
+- Keep MongoDB, Cloudinary, and email secrets out of source control.
 
-<div align=\"center\">
-**Built with ❤️ for Local Buy/Sell Revolution! 🚀**
-</div>
+## Brand
+
+Name: `BuySellAdda`
+
+Tagline: `Har Deal, Ek Nayi Shuruaat`
+
+Logo asset: `/logo-1.png`
