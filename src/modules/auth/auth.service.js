@@ -53,6 +53,11 @@ const login = async ({ email, password }) => {
   if (!isMatch) {
     throw new Error('Invalid credentials');
   }
+  if (user.isBlocked) {
+    const error = new Error('Your account is blocked. Please contact support.');
+    error.statusCode = 403;
+    throw error;
+  }
 
   const token = generateToken(user._id);
   return { user: user.toObject({ versionKey: false }), token };
