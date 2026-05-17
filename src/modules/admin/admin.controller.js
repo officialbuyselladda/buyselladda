@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -86,6 +86,24 @@ const toggleUserBlock = asyncHandler(async (req, res) => {
   });
 });
 
+const getUserLimits = asyncHandler(async (req, res) => {
+  const { error } = listValidation.validate(req.query);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const users = await adminService.listUserLimits(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User ad limits',
+    data: users,
+  });
+});
+
 const createUser = asyncHandler(async (req, res) => {
   const { error, value } = createUserValidation.validate(req.body);
   if (error) {
@@ -130,6 +148,53 @@ const updateUser = asyncHandler(async (req, res) => {
     statusCode: 200,
     message: 'User updated',
     data: user,
+  });
+});
+
+const updateUserAdLimits = asyncHandler(async (req, res) => {
+  const paramValidation = userDetailValidation.validate({ id: req.params.id });
+  if (paramValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: paramValidation.error.details[0].message,
+    });
+  }
+
+  const bodyValidation = adPostingLimitsValidation.validate(req.body);
+  if (bodyValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: bodyValidation.error.details[0].message,
+    });
+  }
+
+  const user = await adminService.updateUserAdLimits(req.params.id, bodyValidation.value);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Ad posting limits updated',
+    data: user,
+  });
+});
+
+const bulkUpdateUserAdLimits = asyncHandler(async (req, res) => {
+  const { error, value } = bulkAdPostingLimitsValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const result = await adminService.bulkUpdateUserAdLimits(value);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Ad posting limits applied',
+    data: result,
   });
 });
 
@@ -254,5 +319,5 @@ const getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, createUser, getUserDetail, toggleUserBlock, updateUser, getChats, deleteChat, getReports, getModeration, getAnalytics };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getChats, deleteChat, getReports, getModeration, getAnalytics };
 

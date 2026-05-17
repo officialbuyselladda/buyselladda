@@ -80,6 +80,50 @@ const isImageSetSafe = (images = []) => {
   });
 };
 
+const getSafeAdPostingLimits = (limits = {}) => ({
+  daily: Number.isFinite(Number(limits.daily)) ? Number(limits.daily) : 5,
+  weekendDaily: Number.isFinite(Number(limits.weekendDaily)) ? Number(limits.weekendDaily) : 10,
+  monthly: Number.isFinite(Number(limits.monthly)) ? Number(limits.monthly) : 50,
+  unlimited: Boolean(limits.unlimited),
+});
+
+const assertUserCanPostAd = async (user) => {
+  const limits = getSafeAdPostingLimits(user.adPostingLimits);
+  if (limits.unlimited || user.role === 'admin') return;
+
+  const now = new Date();
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+  const activeDailyLimit = isWeekend ? limits.weekendDaily : limits.daily;
+
+  const [todayCount, monthCount] = await Promise.all([
+    Product.countDocuments({
+      user: user._id,
+      status: { $ne: 'deleted' },
+      createdAt: { $gte: dayStart, $lte: now },
+    }),
+    Product.countDocuments({
+      user: user._id,
+      status: { $ne: 'deleted' },
+      createdAt: { $gte: monthStart, $lte: now },
+    }),
+  ]);
+
+  if (todayCount >= activeDailyLimit) {
+    const error = new Error(`Daily ad posting limit reached. You can post ${activeDailyLimit} ads today.`);
+    error.statusCode = 429;
+    throw error;
+  }
+
+  if (monthCount >= limits.monthly) {
+    const error = new Error(`Monthly ad posting limit reached. You can post ${limits.monthly} ads this month.`);
+    error.statusCode = 429;
+    throw error;
+  }
+};
+
 // Generate unique slug from title + timestamp + random to prevent duplicates
 const generateSlug = (title) => {
   const timestamp = Date.now().toString(36);
@@ -94,8 +138,9 @@ const generateSlug = (title) => {
 };
 
 export const createProduct = async (productData) => {
-  const user = await User.findById(productData.user).select('trustScore');
+  const user = await User.findById(productData.user).select('trustScore email role adPostingLimits');
   if (!user) throw new Error('User not found');
+  await assertUserCanPostAd(user);
 
   const categoryName = await normalizeCategory(productData.category, { requireActive: true });
   if (!categoryName) throw new Error('Please choose a valid active category');

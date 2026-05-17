@@ -85,6 +85,112 @@ const listUsers = async ({ page = 1, limit = 10, role, search, status }) => {
   return { users, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) };
 };
 
+const getLimitWindows = () => {
+  const now = new Date();
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { now, dayStart, monthStart };
+};
+
+const getSafeLimits = (limits = {}) => ({
+  daily: Number.isFinite(Number(limits.daily)) ? Number(limits.daily) : 5,
+  weekendDaily: Number.isFinite(Number(limits.weekendDaily)) ? Number(limits.weekendDaily) : 10,
+  monthly: Number.isFinite(Number(limits.monthly)) ? Number(limits.monthly) : 50,
+  unlimited: Boolean(limits.unlimited),
+});
+
+const addUsageToUsers = async (users) => {
+  const { now, dayStart, monthStart } = getLimitWindows();
+  const userIds = users.map((user) => user._id);
+  const [todayCounts, monthCounts] = await Promise.all([
+    Product.aggregate([
+      { $match: { user: { $in: userIds }, status: { $ne: 'deleted' }, createdAt: { $gte: dayStart, $lte: now } } },
+      { $group: { _id: '$user', count: { $sum: 1 } } },
+    ]),
+    Product.aggregate([
+      { $match: { user: { $in: userIds }, status: { $ne: 'deleted' }, createdAt: { $gte: monthStart, $lte: now } } },
+      { $group: { _id: '$user', count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const todayMap = {};
+  const monthMap = {};
+  todayCounts.forEach((item) => { todayMap[item._id.toString()] = item.count; });
+  monthCounts.forEach((item) => { monthMap[item._id.toString()] = item.count; });
+  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+
+  return users.map((user) => {
+    const limits = getSafeLimits(user.adPostingLimits);
+    const activeDailyLimit = isWeekend ? limits.weekendDaily : limits.daily;
+    const todayUsed = todayMap[user._id.toString()] || 0;
+    const monthUsed = monthMap[user._id.toString()] || 0;
+    return {
+      ...user,
+      adPostingLimits: limits,
+      adUsage: {
+        today: todayUsed,
+        month: monthUsed,
+        activeDailyLimit,
+        isWeekend,
+        dailyRemaining: limits.unlimited ? null : Math.max(activeDailyLimit - todayUsed, 0),
+        monthlyRemaining: limits.unlimited ? null : Math.max(limits.monthly - monthUsed, 0),
+      },
+      status: user.isBlocked ? 'blocked' : 'active',
+    };
+  });
+};
+
+const listUserLimits = async ({ page = 1, limit = 10, role = 'user', search, status }) => {
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 10, 100);
+  const skip = (pageNum - 1) * limitNum;
+  const query = {};
+  if (role && role !== 'all') query.role = role;
+  if (status && status !== 'all') query.isBlocked = status === 'blocked';
+  if (search && search.trim()) {
+    query.$or = [
+      { name: { $regex: search.trim(), $options: 'i' } },
+      { email: { $regex: search.trim(), $options: 'i' } },
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .select('name email role isBlocked adPostingLimits createdAt')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
+    User.countDocuments(query),
+  ]);
+
+  const usersWithUsage = await addUsageToUsers(users);
+  return { users: usersWithUsage, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) };
+};
+
+const updateUserAdLimits = async (id, limits) => {
+  const user = await User.findById(id).select('-password');
+  if (!user) throw new Error('User not found');
+
+  user.adPostingLimits = getSafeLimits(limits);
+  await user.save();
+  const [userWithUsage] = await addUsageToUsers([user.toObject()]);
+  return userWithUsage;
+};
+
+const bulkUpdateUserAdLimits = async ({ role = 'user', ...limits }) => {
+  const query = {};
+  if (role && role !== 'all') query.role = role;
+  const adPostingLimits = getSafeLimits(limits);
+  const result = await User.updateMany(query, { $set: { adPostingLimits } });
+  return {
+    matched: result.matchedCount || 0,
+    modified: result.modifiedCount || 0,
+    adPostingLimits,
+  };
+};
+
 const toggleUserBlock = async (id) => {
   const user = await User.findById(id);
   if (!user || user.role === 'admin') {
@@ -428,10 +534,13 @@ export default {
   rejectProduct, 
   listProducts, 
   listUsers, 
+  listUserLimits,
   createUser,
   getUserDetail,
   toggleUserBlock,
   updateUser,
+  updateUserAdLimits,
+  bulkUpdateUserAdLimits,
   listChats,
   deleteChat,
   getReports,

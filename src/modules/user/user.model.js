@@ -53,6 +53,27 @@ const userSchema = mongoose.Schema({
     default: 0,
     min: 0,
   },
+  adPostingLimits: {
+    daily: {
+      type: Number,
+      default: 5,
+      min: 0,
+    },
+    weekendDaily: {
+      type: Number,
+      default: 10,
+      min: 0,
+    },
+    monthly: {
+      type: Number,
+      default: 50,
+      min: 0,
+    },
+    unlimited: {
+      type: Boolean,
+      default: false,
+    },
+  },
   resetPasswordToken: {
     type: String,
     select: false,

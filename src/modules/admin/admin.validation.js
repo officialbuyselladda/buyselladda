@@ -53,3 +53,14 @@ export const createUserValidation = Joi.object({
   isBlocked: Joi.boolean().default(false)
 });
 
+export const adPostingLimitsValidation = Joi.object({
+  daily: Joi.number().integer().min(0).max(100000).required(),
+  weekendDaily: Joi.number().integer().min(0).max(100000).required(),
+  monthly: Joi.number().integer().min(0).max(1000000).required(),
+  unlimited: Joi.boolean().required()
+});
+
+export const bulkAdPostingLimitsValidation = adPostingLimitsValidation.keys({
+  role: Joi.string().valid('user', 'admin', 'all').default('user')
+});
+

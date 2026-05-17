@@ -16,12 +16,15 @@ router.get('/analytics', auth, admin, asyncHandler(adminController.getAnalytics)
 router.get('/products', auth, admin, asyncHandler(adminController.getProducts));
 router.get('/users', auth, admin, asyncHandler(adminController.getUsers));
 router.post('/users', auth, admin, asyncHandler(adminController.createUser));
+router.get('/user-limits', auth, admin, asyncHandler(adminController.getUserLimits));
+router.put('/user-limits/bulk', auth, admin, asyncHandler(adminController.bulkUpdateUserAdLimits));
 router.get('/chats', auth, admin, asyncHandler(adminController.getChats));
 router.delete('/chats/:id', auth, admin, asyncHandler(adminController.deleteChat));
 router.get('/reports', auth, admin, asyncHandler(adminController.getReports));
 router.get('/moderation', auth, admin, asyncHandler(adminController.getModeration));
 router.get('/users/:id', auth, admin, asyncHandler(adminController.getUserDetail));
 router.put('/users/:id/block', auth, admin, asyncHandler(adminController.toggleUserBlock));
+router.put('/users/:id/ad-limits', auth, admin, asyncHandler(adminController.updateUserAdLimits));
 router.put('/users/:id', auth, admin, asyncHandler(adminController.updateUser));
 router.delete('/users/:id', auth, admin, asyncHandler(adminController.deleteUser));
 router.delete('/products/:id', auth, admin, asyncHandler(adminController.deleteProduct));
