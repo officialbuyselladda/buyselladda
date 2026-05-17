@@ -81,6 +81,7 @@ export const adminPermissionsList = [
   'settings',
   'systemSettings',
   'adminRoles',
+  'appControl',
 ];
 
 export const adminRoleAccountValidation = Joi.object({
