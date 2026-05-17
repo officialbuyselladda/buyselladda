@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation, adminRoleAccountValidation, updateAdminRoleAccountValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -198,6 +198,87 @@ const bulkUpdateUserAdLimits = asyncHandler(async (req, res) => {
   });
 });
 
+const getAdminRoleAccounts = asyncHandler(async (req, res) => {
+  const { error } = listValidation.validate(req.query);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const admins = await adminService.listAdminRoleAccounts(req.query);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Admin role accounts',
+    data: admins,
+  });
+});
+
+const createAdminRoleAccount = asyncHandler(async (req, res) => {
+  const { error, value } = adminRoleAccountValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const adminUser = await adminService.createAdminRoleAccount(value);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'Admin account created',
+    data: adminUser,
+  });
+});
+
+const updateAdminRoleAccount = asyncHandler(async (req, res) => {
+  const paramValidation = userDetailValidation.validate({ id: req.params.id });
+  if (paramValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: paramValidation.error.details[0].message,
+    });
+  }
+
+  const bodyValidation = updateAdminRoleAccountValidation.validate(req.body);
+  if (bodyValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: bodyValidation.error.details[0].message,
+    });
+  }
+
+  const adminUser = await adminService.updateAdminRoleAccount(req.params.id, bodyValidation.value);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Admin account updated',
+    data: adminUser,
+  });
+});
+
+const deleteAdminRoleAccount = asyncHandler(async (req, res) => {
+  const { error } = userDetailValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  await adminService.deleteAdminRoleAccount(req.params.id, req.user._id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Admin account deleted',
+  });
+});
+
 const deleteUser = asyncHandler(async (req, res) => {
   const { error } = deleteUserValidation.validate({ id: req.params.id });
   if (error) {
@@ -319,5 +400,5 @@ const getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getChats, deleteChat, getReports, getModeration, getAnalytics };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, getModeration, getAnalytics };
 

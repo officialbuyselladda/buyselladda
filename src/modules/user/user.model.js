@@ -26,6 +26,10 @@ const userSchema = mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user',
   },
+  adminPermissions: [{
+    type: String,
+    trim: true,
+  }],
   phone: {
     type: String,
     trim: true,

@@ -191,6 +191,119 @@ const bulkUpdateUserAdLimits = async ({ role = 'user', ...limits }) => {
   };
 };
 
+const normalizeAdminPermissions = (permissions = []) => {
+  const unique = [...new Set(permissions.filter(Boolean))];
+  return unique.includes('all') ? ['all'] : unique;
+};
+
+const listAdminRoleAccounts = async ({ page = 1, limit = 10, search, status }) => {
+  const pageNum = parseInt(page) || 1;
+  const limitNum = Math.min(parseInt(limit) || 10, 100);
+  const skip = (pageNum - 1) * limitNum;
+  const query = { role: 'admin' };
+  if (status && status !== 'all') query.isBlocked = status === 'blocked';
+  if (search && search.trim()) {
+    query.$or = [
+      { name: { $regex: search.trim(), $options: 'i' } },
+      { email: { $regex: search.trim(), $options: 'i' } },
+    ];
+  }
+
+  const [admins, total] = await Promise.all([
+    User.find(query)
+      .select('name email phone role isBlocked adminPermissions createdAt lastSeen')
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
+    User.countDocuments(query),
+  ]);
+
+  return {
+    admins: admins.map((item) => ({
+      ...item,
+      adminPermissions: normalizeAdminPermissions(item.adminPermissions || []),
+      accessType: !item.adminPermissions?.length || item.adminPermissions?.includes('all') ? 'Full Access' : 'Limited Access',
+      status: item.isBlocked ? 'blocked' : 'active',
+    })),
+    total,
+    page: pageNum,
+    limit: limitNum,
+    pages: Math.ceil(total / limitNum),
+  };
+};
+
+const createAdminRoleAccount = async (payload) => {
+  const existingUser = await User.findOne({ email: payload.email });
+  if (existingUser) {
+    const error = new Error('This email is already registered');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(payload.password, salt);
+  const adminUser = await User.create({
+    name: payload.name,
+    email: payload.email,
+    password: hashedPassword,
+    phone: payload.phone || '',
+    role: 'admin',
+    isBlocked: Boolean(payload.isBlocked),
+    adminPermissions: normalizeAdminPermissions(payload.adminPermissions),
+  });
+
+  const safeUser = adminUser.toObject();
+  delete safeUser.password;
+  return safeUser;
+};
+
+const updateAdminRoleAccount = async (id, payload) => {
+  const adminUser = await User.findOne({ _id: id, role: 'admin' }).select('+password');
+  if (!adminUser) throw new Error('Admin account not found');
+
+  if (payload.email && payload.email !== adminUser.email) {
+    const existingUser = await User.findOne({ email: payload.email, _id: { $ne: id } });
+    if (existingUser) {
+      const error = new Error('This email is already registered');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
+  ['name', 'email', 'phone', 'isBlocked'].forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(payload, key)) {
+      adminUser[key] = payload[key];
+    }
+  });
+
+  if (Array.isArray(payload.adminPermissions)) {
+    adminUser.adminPermissions = normalizeAdminPermissions(payload.adminPermissions);
+  }
+
+  if (payload.password && payload.password.trim()) {
+    const salt = await bcrypt.genSalt(10);
+    adminUser.password = await bcrypt.hash(payload.password, salt);
+  }
+
+  await adminUser.save();
+  const safeUser = adminUser.toObject();
+  delete safeUser.password;
+  return safeUser;
+};
+
+const deleteAdminRoleAccount = async (id, currentAdminId) => {
+  if (String(id) === String(currentAdminId)) {
+    const error = new Error('You cannot delete your own admin account');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const adminUser = await User.findOne({ _id: id, role: 'admin' });
+  if (!adminUser) throw new Error('Admin account not found');
+  await adminUser.deleteOne();
+};
+
 const toggleUserBlock = async (id) => {
   const user = await User.findById(id);
   if (!user || user.role === 'admin') {
@@ -541,6 +654,10 @@ export default {
   updateUser,
   updateUserAdLimits,
   bulkUpdateUserAdLimits,
+  listAdminRoleAccounts,
+  createAdminRoleAccount,
+  updateAdminRoleAccount,
+  deleteAdminRoleAccount,
   listChats,
   deleteChat,
   getReports,

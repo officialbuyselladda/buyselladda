@@ -41,7 +41,7 @@ const login = asyncHandler(async (req, res) => {
     success: true,
     statusCode: 200,
     message: 'Login successful',
-    data: { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token },
+    data: { user: { id: user._id, name: user.name, email: user.email, role: user.role, adminPermissions: user.adminPermissions || [] }, token },
   });
 });
 
@@ -75,7 +75,8 @@ const adminLogin = asyncHandler(async (req, res) => {
         id: user._id, 
         name: user.name, 
         email: user.email, 
-        role: user.role 
+        role: user.role,
+        adminPermissions: user.adminPermissions || [],
       }, 
       token 
     },

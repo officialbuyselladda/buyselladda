@@ -64,3 +64,40 @@ export const bulkAdPostingLimitsValidation = adPostingLimitsValidation.keys({
   role: Joi.string().valid('user', 'admin', 'all').default('user')
 });
 
+export const adminPermissionsList = [
+  'all',
+  'dashboard',
+  'analytics',
+  'products',
+  'users',
+  'userLimits',
+  'chats',
+  'reports',
+  'supportTickets',
+  'categories',
+  'favorites',
+  'notifications',
+  'moderation',
+  'settings',
+  'systemSettings',
+  'adminRoles',
+];
+
+export const adminRoleAccountValidation = Joi.object({
+  name: Joi.string().trim().min(2).max(30).required(),
+  email: Joi.string().trim().email().required(),
+  password: Joi.string().min(6).max(128).required(),
+  phone: Joi.string().trim().allow('').optional(),
+  adminPermissions: Joi.array().items(Joi.string().valid(...adminPermissionsList)).min(1).required(),
+  isBlocked: Joi.boolean().default(false)
+});
+
+export const updateAdminRoleAccountValidation = Joi.object({
+  name: Joi.string().trim().min(2).max(30).optional(),
+  email: Joi.string().trim().email().optional(),
+  password: Joi.string().min(6).max(128).allow('').optional(),
+  phone: Joi.string().trim().allow('').optional(),
+  adminPermissions: Joi.array().items(Joi.string().valid(...adminPermissionsList)).min(1).optional(),
+  isBlocked: Joi.boolean().optional()
+}).min(1);
+
