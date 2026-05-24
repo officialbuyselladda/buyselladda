@@ -21,6 +21,9 @@ const envSchema = Joi.object({
   EMAIL_USER: Joi.string().email().required(),
   EMAIL_PASS: Joi.string().required(),
   EMAIL_FROM: Joi.string().email().optional(),
+  AUTO_APPROVE_PENDING_ADS: Joi.boolean().truthy('true').truthy('1').falsy('false').falsy('0').default(true),
+  AUTO_APPROVE_PENDING_ADS_AFTER_MINUTES: Joi.number().positive().default(10),
+  AUTO_APPROVE_PENDING_ADS_INTERVAL_SECONDS: Joi.number().positive().default(60),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);

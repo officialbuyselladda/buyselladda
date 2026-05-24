@@ -1,7 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import authService from './auth.service.js';
 import sendResponse from '../../utils/responseHandler.js';
-import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation } from './auth.validation.js';
+import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation } from './auth.validation.js';
 import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
@@ -16,8 +16,9 @@ const register = asyncHandler(async (req, res) => {
   }
 
   const { user, token } = await authService.register(req.body);
-  // Send welcome email
-  await sendEmail(user.email, 'Welcome to BuySellAdda', templates.welcome(user.name));
+  sendEmail(user.email, 'Welcome to BuySellAdda', templates.welcome(user.name)).catch((error) => {
+    console.warn('Welcome email failed:', error.message);
+  });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -37,6 +38,19 @@ const login = asyncHandler(async (req, res) => {
   }
 
   const { user, token } = await authService.login(req.body);
+  if (user.email) {
+    sendEmail(
+      user.email,
+      'New login to your BuySellAdda account',
+      templates.loginAlert({
+        name: user.name,
+        ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
+        time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      }),
+    ).catch((emailError) => {
+      console.warn('Login alert email failed:', emailError.message);
+    });
+  }
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -118,6 +132,11 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 
   const { user, token } = await authService.resetPassword(req.params.token, req.body.password);
+  if (user.email) {
+    sendEmail(user.email, 'Your BuySellAdda password was changed', templates.passwordChanged(user.name)).catch((error) => {
+      console.warn('Password reset confirmation email failed:', error.message);
+    });
+  }
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -126,5 +145,28 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, adminLogin, forgotPassword, resetPassword };
+const changePassword = asyncHandler(async (req, res) => {
+  const { error } = changePasswordValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const user = await authService.changePassword(req.user._id, req.body.currentPassword, req.body.newPassword);
+  if (user.email) {
+    sendEmail(user.email, 'Your BuySellAdda password was changed', templates.passwordChanged(user.name)).catch((error) => {
+      console.warn('Password change email failed:', error.message);
+    });
+  }
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Password changed successfully',
+  });
+});
+
+export { register, login, adminLogin, forgotPassword, resetPassword, changePassword };
 

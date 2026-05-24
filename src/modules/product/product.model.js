@@ -59,6 +59,15 @@ const productSchema = mongoose.Schema({
     enum: ['pending', 'approved', 'paused', 'rejected', 'suspicious', 'deleted', 'sold'],
     default: 'pending',
   },
+  approvedAt: {
+    type: Date,
+    default: null,
+  },
+  approvalSource: {
+    type: String,
+    enum: ['manual', 'auto', null],
+    default: null,
+  },
   slug: {
     type: String,
     lowercase: true,
@@ -87,6 +96,7 @@ productSchema.index({ category: 1, createdAt: -1 });
 productSchema.index({ user: 1, createdAt: -1 });
 productSchema.index({ isBoosted: -1, createdAt: -1, status: 1 });
 productSchema.index({ locationCoords: '2dsphere' });
+productSchema.index({ status: 1, createdAt: 1 });
 
 
 const Product = mongoose.model('Product', productSchema);

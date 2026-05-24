@@ -42,7 +42,23 @@ export const cosineSimilarity = (vecA, vecB) => {
 };
 
 const bannedWords = ['spam', 'scam', 'free', 'hack', 'viagra']; // Add more
-const FALLBACK_CATEGORIES = ['Electronics', 'Vehicles', 'Property', 'Jobs', 'Services', 'Others'];
+const FALLBACK_CATEGORIES = [
+  'Stationary',
+  'Electronics',
+  'Jobs',
+  'Clothes',
+  'Room',
+  'Flat,Building',
+  'Cars',
+  'Motorcycle',
+  'For Sale: Houses & Apartments',
+  'For Rent: Houses & Apartments',
+  'Vehicles',
+  'Property',
+  'Jobs',
+  'Services',
+  'Others',
+];
 
 const slugify = (value = '') => String(value)
   .toLowerCase()
@@ -420,6 +436,8 @@ export const updateProduct = async (id, updateData, userId) => {
   }
   if (product.status === 'rejected' || product.status === 'approved') {
     updateData.status = 'pending';
+    updateData.approvedAt = null;
+    updateData.approvalSource = null;
   }
   Object.assign(product, updateData);
   if (updateData.title || updateData.description) {

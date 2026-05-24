@@ -612,6 +612,8 @@ const approveProduct = async (id) => {
     throw new Error('Product was deleted');
   }
   product.status = 'approved';
+  product.approvedAt = new Date();
+  product.approvalSource = 'manual';
   await product.save();
   await User.findByIdAndUpdate(product.user, { $inc: { trustScore: 1 } });
   const user = await User.findById(product.user);
@@ -628,6 +630,8 @@ const rejectProduct = async (id) => {
   const product = await Product.findById(id);
   if (!product) throw new Error('Product not found');
   product.status = 'rejected';
+  product.approvedAt = null;
+  product.approvalSource = null;
   await product.save();
   await User.findByIdAndUpdate(product.user, { $inc: { trustScore: -1 } });
   const user = await User.findById(product.user);

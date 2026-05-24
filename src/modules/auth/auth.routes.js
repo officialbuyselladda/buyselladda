@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { register, login, adminLogin, forgotPassword, resetPassword } from './auth.controller.js';
+import { register, login, adminLogin, forgotPassword, resetPassword, changePassword } from './auth.controller.js';
 import asyncHandler from '../../utils/asyncHandler.js';
+import auth from '../../middleware/auth.middleware.js';
 import { authLimiter } from '../../middleware/rateLimiter.js';
 
 const router = Router();
@@ -10,6 +11,7 @@ router.post('/login', authLimiter, asyncHandler(login));
 router.post('/admin-login', authLimiter, asyncHandler(adminLogin));
 router.post('/forgot-password', authLimiter, asyncHandler(forgotPassword));
 router.put('/reset-password/:token', authLimiter, asyncHandler(resetPassword));
+router.put('/change-password', auth, asyncHandler(changePassword));
 
 export default router;
 

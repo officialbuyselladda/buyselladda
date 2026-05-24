@@ -100,5 +100,27 @@ const resetPassword = async (token, password) => {
   return { user: user.toObject({ versionKey: false }), token: authToken };
 };
 
-export default { register, login, createPasswordResetToken, resetPassword };
+const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await User.findById(userId).select('+password');
+  if (!user || !user.password) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    const error = new Error('Current password is incorrect');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  await user.save();
+
+  return user.toObject({ versionKey: false });
+};
+
+export default { register, login, createPasswordResetToken, resetPassword, changePassword };
 

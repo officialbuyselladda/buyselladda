@@ -53,5 +53,20 @@ const resetPasswordValidation = Joi.object({
     }),
 });
 
-export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation };
+const changePasswordValidation = Joi.object({
+  currentPassword: Joi.string().min(1).required()
+    .messages({
+      'string.empty': 'Current password is required',
+    }),
+  newPassword: Joi.string().min(6).max(64).required()
+    .invalid(Joi.ref('currentPassword'))
+    .messages({
+      'any.invalid': 'New password must be different from current password',
+      'string.empty': 'New password is required',
+      'string.min': 'New password must be at least {#limit} characters',
+      'string.max': 'New password cannot exceed {#limit} characters',
+    }),
+});
+
+export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation };
 

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import initSocket from './src/config/socket.js';
 import fs from 'fs';
 import path from 'path';
+import { startProductAutoApprovalJob } from './src/jobs/productAutoApproval.job.js';
 
 dotenv.config();
 
@@ -28,7 +29,8 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
   }
 }
 
-connectDB();
+await connectDB();
+startProductAutoApprovalJob();
 
 // Start server based on SSL availability
 if (sslOptions) {
