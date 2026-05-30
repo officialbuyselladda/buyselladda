@@ -8,6 +8,7 @@ import routes from './routes.js';
 import envConfig from './config/env.js';
 
 const app = express();
+app.set('etag', false);
 
 // Dynamic CORS origin for production
 const isProduction = process.env.NODE_ENV === 'production';
@@ -31,13 +32,19 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(rateLimiter);
 
 // Routes
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use('/api', routes);
 
 // Error handler
