@@ -29,9 +29,13 @@ router.delete('/chats/:id', auth, admin, permit('chats'), asyncHandler(adminCont
 router.get('/reports', auth, admin, permit('reports'), asyncHandler(adminController.getReports));
 router.get('/reports/export/:format', auth, admin, permit('reports'), asyncHandler(adminController.exportReports));
 router.get('/moderation', auth, admin, permit('moderation'), asyncHandler(adminController.getModeration));
+router.put('/users/verify-email/:id', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
+router.patch('/users/verify-email/:id', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
+router.post('/users/resend-verification/:id', auth, admin, permit('users'), asyncHandler(adminController.resendUserVerificationEmail));
 router.get('/users/:id', auth, admin, permit('users'), asyncHandler(adminController.getUserDetail));
 router.put('/users/:id/block', auth, admin, permit('users'), asyncHandler(adminController.toggleUserBlock));
 router.put('/users/:id/verify-email', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
+router.patch('/users/:id/verify-email', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
 router.post('/users/:id/resend-verification', auth, admin, permit('users'), asyncHandler(adminController.resendUserVerificationEmail));
 router.put('/users/:id/ad-limits', auth, admin, permit('userLimits'), asyncHandler(adminController.updateUserAdLimits));
 router.put('/users/:id', auth, admin, permit('users'), asyncHandler(adminController.updateUser));
