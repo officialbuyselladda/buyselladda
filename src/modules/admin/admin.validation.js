@@ -43,6 +43,10 @@ export const toggleUserBlockValidation = Joi.object({
   id: Joi.string().required()
 });
 
+export const userEmailVerificationValidation = Joi.object({
+  id: Joi.string().required()
+});
+
 export const createUserValidation = Joi.object({
   name: Joi.string().trim().min(2).max(30).required(),
   email: Joi.string().trim().email().required(),

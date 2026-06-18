@@ -18,14 +18,26 @@ const register = asyncHandler(async (req, res) => {
   const { user, verifyToken } = await authService.register(req.body);
   const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:3000';
   const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
-  sendEmail(user.email, 'Verify your BuySellAdda email', templates.verifyEmail({ name: user.name, verifyUrl })).catch((error) => {
+  let emailSent = true;
+  let emailError = null;
+  try {
+    await sendEmail(user.email, 'Verify your BuySellAdda email', templates.verifyEmail({ name: user.name, verifyUrl }));
+  } catch (error) {
+    emailSent = false;
+    emailError = error.message;
     console.warn('Verification email failed:', error.message);
-  });
+  }
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: 'Registration successful. Please verify your email before login.',
-    data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, isEmailVerified: user.isEmailVerified } },
+    message: emailSent
+      ? 'Registration successful. Please verify your email before login.'
+      : 'Registration successful, but verification email could not be sent. Please contact admin or request resend.',
+    data: {
+      user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, isEmailVerified: user.isEmailVerified },
+      emailSent,
+      emailError,
+    },
   });
 });
 

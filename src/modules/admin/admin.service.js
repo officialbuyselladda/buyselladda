@@ -4,6 +4,7 @@ import Chat from '../chat/chat.model.js';
 import Message from '../chat/message.model.js';
 import UserReport from '../user/userReport.model.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import templates from '../../utils/emailTemplates.js';
 import sendEmail from '../../config/email.js';
 
@@ -81,8 +82,60 @@ const listUsers = async ({ page = 1, limit = 10, role, search, status }) => {
   users.forEach(u => {
     u.productCount = countMap[u._id.toString()] || 0;
     u.status = u.isBlocked ? 'blocked' : 'active';
+    u.emailStatus = u.isEmailVerified ? 'verified' : 'unverified';
   });
   return { users, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) };
+};
+
+const createVerificationToken = () => crypto.randomBytes(32).toString('hex');
+const hashVerificationToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+const getClientUrl = () => (
+  process.env.CLIENT_URL
+  || process.env.FRONTEND_URL
+  || process.env.WEBSITE_URL
+  || 'https://dealkro.in'
+).replace(/\/$/, '');
+
+const verifyUserEmail = async (id) => {
+  const user = await User.findById(id).select('+emailVerificationToken +emailVerificationExpire');
+  if (!user) throw new Error('User not found');
+  if (user.role === 'admin') throw new Error('Admin email verification is managed separately');
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpire = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  const safeUser = user.toObject();
+  delete safeUser.password;
+  delete safeUser.emailVerificationToken;
+  delete safeUser.emailVerificationExpire;
+  safeUser.emailStatus = 'verified';
+  return safeUser;
+};
+
+const resendUserVerificationEmail = async (id) => {
+  const user = await User.findById(id).select('+emailVerificationToken +emailVerificationExpire');
+  if (!user) throw new Error('User not found');
+  if (user.role === 'admin') throw new Error('Admin accounts do not need public email verification');
+  if (user.isEmailVerified) {
+    return { user, emailSent: false, alreadyVerified: true };
+  }
+
+  const verifyToken = createVerificationToken();
+  user.emailVerificationToken = hashVerificationToken(verifyToken);
+  user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000;
+  await user.save({ validateBeforeSave: false });
+
+  const verifyUrl = `${getClientUrl()}/verify-email/${verifyToken}`;
+  await sendEmail(
+    user.email,
+    'Verify your BuySellAdda email',
+    templates.verifyEmail({ name: user.name, verifyUrl }),
+  );
+
+  return { user, emailSent: true, alreadyVerified: false };
 };
 
 const getLimitWindows = () => {
@@ -618,6 +671,7 @@ const getUserDetail = async (id) => {
   user.products = products;
   user.productCount = user.products ? user.products.length : 0;
   user.status = user.isBlocked ? 'blocked' : 'active';
+  user.emailStatus = user.isEmailVerified ? 'verified' : 'unverified';
   return user;
 };
 
@@ -706,6 +760,8 @@ export default {
   getUserDetail,
   toggleUserBlock,
   updateUser,
+  verifyUserEmail,
+  resendUserVerificationEmail,
   updateUserAdLimits,
   bulkUpdateUserAdLimits,
   listAdminRoleAccounts,

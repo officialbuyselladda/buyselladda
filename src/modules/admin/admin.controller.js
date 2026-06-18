@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation, adminRoleAccountValidation, updateAdminRoleAccountValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation, adminRoleAccountValidation, updateAdminRoleAccountValidation, userEmailVerificationValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -83,6 +83,45 @@ const toggleUserBlock = asyncHandler(async (req, res) => {
     statusCode: 200,
     message: `User ${user.isBlocked ? 'blocked' : 'unblocked'}`,
     data: user,
+  });
+});
+
+const verifyUserEmail = asyncHandler(async (req, res) => {
+  const { error } = userEmailVerificationValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const user = await adminService.verifyUserEmail(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User email verified',
+    data: user,
+  });
+});
+
+const resendUserVerificationEmail = asyncHandler(async (req, res) => {
+  const { error } = userEmailVerificationValidation.validate({ id: req.params.id });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+  const result = await adminService.resendUserVerificationEmail(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: result.alreadyVerified ? 'User email is already verified' : 'Verification email sent',
+    data: {
+      emailSent: result.emailSent,
+      alreadyVerified: result.alreadyVerified,
+    },
   });
 });
 
@@ -409,5 +448,5 @@ const getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, exportReports, getModeration, getAnalytics };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, verifyUserEmail, resendUserVerificationEmail, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, exportReports, getModeration, getAnalytics };
 
