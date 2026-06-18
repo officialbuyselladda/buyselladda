@@ -21,7 +21,12 @@ const registerValidation = Joi.object({
       'string.min': 'Password must be at least {#limit} characters',
       'string.max': 'Password cannot exceed {#limit} characters',
     }),
-  phone: Joi.string().trim().allow('', null).optional(),
+  phone: Joi.string().trim().pattern(/^[6-9]\d{9}$/).required()
+    .messages({
+      'string.empty': 'Phone number is required',
+      'string.pattern.base': 'Phone number must be a valid 10 digit Indian mobile number',
+    }),
+  userType: Joi.string().valid('normal', 'dealer').default('normal'),
 });
 
 const loginValidation = Joi.object({
@@ -53,6 +58,10 @@ const resetPasswordValidation = Joi.object({
     }),
 });
 
+const verifyEmailValidation = Joi.object({
+  token: Joi.string().trim().min(20).required(),
+});
+
 const changePasswordValidation = Joi.object({
   currentPassword: Joi.string().min(1).required()
     .messages({
@@ -68,5 +77,5 @@ const changePasswordValidation = Joi.object({
     }),
 });
 
-export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation };
+export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation };
 

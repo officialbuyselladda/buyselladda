@@ -4,6 +4,7 @@ import User from '../user/user.model.js';
 import Category from '../category/category.model.js';
 import templates from '../../utils/emailTemplates.js';
 import sendEmail from '../../config/email.js';
+import appConfigService from '../appConfig/appConfig.service.js';
 
 // DSA Helpers - TF-IDF + Cosine Similarity for Recommendations
 export const computeTFIDF = (text) => {
@@ -103,6 +104,17 @@ const getSafeAdPostingLimits = (limits = {}) => ({
   unlimited: Boolean(limits.unlimited),
 });
 
+const getMonthlyLimitForUser = async (user, limits) => {
+  const config = await appConfigService.getAppConfig().catch(() => null);
+  if (user.userType === 'dealer' || user.subscriptionGroup === 'dealer') {
+    return Number(config?.controls?.dealerMonthlyPostLimit) || limits.monthly;
+  }
+  if (user.subscriptionGroup === 'free') {
+    return Number(config?.controls?.freeMonthlyPostLimit) || limits.monthly;
+  }
+  return limits.monthly;
+};
+
 const assertUserCanPostAd = async (user) => {
   const limits = getSafeAdPostingLimits(user.adPostingLimits);
   if (limits.unlimited || user.role === 'admin') return;
@@ -114,6 +126,7 @@ const assertUserCanPostAd = async (user) => {
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const activeDailyLimit = isWeekend ? limits.weekendDaily : limits.daily;
 
+  const monthlyLimit = await getMonthlyLimitForUser(user, limits);
   const [todayCount, monthCount] = await Promise.all([
     Product.countDocuments({
       user: user._id,
@@ -133,8 +146,8 @@ const assertUserCanPostAd = async (user) => {
     throw error;
   }
 
-  if (monthCount >= limits.monthly) {
-    const error = new Error(`Monthly ad posting limit reached. You can post ${limits.monthly} ads this month.`);
+  if (monthCount >= monthlyLimit) {
+    const error = new Error(`Monthly ad posting limit reached. Free users can post ${monthlyLimit} ads per month. Please wait until next month or continue with a subscription to post more ads.`);
     error.statusCode = 429;
     throw error;
   }
@@ -154,13 +167,18 @@ const generateSlug = (title) => {
 };
 
 export const createProduct = async (productData) => {
-  const user = await User.findById(productData.user).select('trustScore email role adPostingLimits');
+  const user = await User.findById(productData.user).select('trustScore email role userType subscriptionGroup adPostingLimits');
   if (!user) throw new Error('User not found');
   await assertUserCanPostAd(user);
 
   const categoryName = await normalizeCategory(productData.category, { requireActive: true });
   if (!categoryName) throw new Error('Please choose a valid active category');
   productData.category = categoryName;
+  if (productData.subCategory) {
+    const subCategoryName = await normalizeCategory(productData.subCategory, { requireActive: true });
+    if (!subCategoryName) throw new Error('Please choose a valid active sub category');
+    productData.subCategory = subCategoryName;
+  }
 
   // Banned words check
   const hasBanned = bannedWords.some(word =>
@@ -181,7 +199,8 @@ export const createProduct = async (productData) => {
   if (imageSafe) score += 2;
 
 // All products go to pending - admin approval required before showing on website
-  const status = 'pending';
+  const config = await appConfigService.getAppConfig().catch(() => null);
+  const status = config?.controls?.autoApproveAds === true && user.trustScore > 5 && score >= 6 ? 'approved' : 'pending';
 
   // Auto-geocode location if no coordinates
   console.log('Attempting to geocode location:', productData.location);
@@ -250,6 +269,15 @@ export const getProducts = async (query) => {
   const lat = parseFloat(query.lat);
   const lng = parseFloat(query.lng);
   const radius = (parseFloat(query.radius) || 10) * 1000; // meters
+  const sortBy = query.sortBy || 'latest';
+  const config = await appConfigService.getAppConfig().catch(() => null);
+  const boostedSort = config?.controls?.boostedSearchEnabled === false ? {} : { isBoosted: -1 };
+  const getSort = () => {
+    if (sortBy === 'price_low') return { ...boostedSort, price: 1, createdAt: -1, _id: -1 };
+    if (sortBy === 'price_high') return { ...boostedSort, price: -1, createdAt: -1, _id: -1 };
+    if (sortBy === 'oldest') return { ...boostedSort, createdAt: 1, _id: 1 };
+    return { ...boostedSort, createdAt: -1, _id: -1 };
+  };
 
   let products;
   let total;
@@ -306,7 +334,7 @@ export const getProducts = async (query) => {
         {
           $match: matchStage
         },
-        { $sort: { isBoosted: -1, createdAt: -1, _id: -1 } },
+        { $sort: getSort() },
         ...(cursor ? [] : [{ $skip: skip }]),
         { $limit: limit + 1 },
         {
@@ -342,9 +370,9 @@ export const getProducts = async (query) => {
 
     if (query.search) {
       findQuery.select({ score: { $meta: 'textScore' } });
-      findQuery.sort({ isBoosted: -1, score: { $meta: 'textScore' }, createdAt: -1 });
+      findQuery.sort({ ...boostedSort, score: { $meta: 'textScore' }, createdAt: -1 });
     } else {
-      findQuery.sort({ isBoosted: -1, createdAt: -1 });
+      findQuery.sort(getSort());
     }
 
     products = await findQuery

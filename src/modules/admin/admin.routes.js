@@ -27,6 +27,7 @@ router.delete('/role-permissions/:id', auth, admin, permit('adminRoles'), asyncH
 router.get('/chats', auth, admin, permit('chats'), asyncHandler(adminController.getChats));
 router.delete('/chats/:id', auth, admin, permit('chats'), asyncHandler(adminController.deleteChat));
 router.get('/reports', auth, admin, permit('reports'), asyncHandler(adminController.getReports));
+router.get('/reports/export/:format', auth, admin, permit('reports'), asyncHandler(adminController.exportReports));
 router.get('/moderation', auth, admin, permit('moderation'), asyncHandler(adminController.getModeration));
 router.get('/users/:id', auth, admin, permit('users'), asyncHandler(adminController.getUserDetail));
 router.put('/users/:id/block', auth, admin, permit('users'), asyncHandler(adminController.toggleUserBlock));

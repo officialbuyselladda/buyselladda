@@ -34,6 +34,34 @@ const userSchema = mongoose.Schema({
     type: String,
     trim: true,
     default: '',
+    validate: {
+      validator(value) {
+        return !value || /^[6-9]\d{9}$/.test(value);
+      },
+      message: 'Please provide a valid 10 digit phone number',
+    },
+  },
+  userType: {
+    type: String,
+    enum: ['normal', 'dealer'],
+    default: 'normal',
+  },
+  subscriptionGroup: {
+    type: String,
+    enum: ['free', 'standard', 'premium', 'dealer'],
+    default: 'free',
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: {
+    type: String,
+    select: false,
+  },
+  emailVerificationExpire: {
+    type: Date,
+    select: false,
   },
   isBlocked: {
     type: Boolean,

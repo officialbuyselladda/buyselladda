@@ -2,12 +2,16 @@ import Notification from './notification.model.js';
 import { NotFoundError } from '../../utils/errorHandler.js';
 import User from '../user/user.model.js';
 import sendEmail from '../../config/email.js';
+import { io } from '../../config/socket.js';
 
 const createNotification = async (userId, notificationData) => {
   const notification = await Notification.create({
     ...notificationData,
     user: userId
   });
+  io?.to(`user:${userId}`).emit('notification', notification);
+  io?.to(`user:${userId}`).emit('notification:new', notification);
+  io?.to(`user:${userId}`).emit('notification:count', await getUnreadCount(userId));
   return notification;
 };
 

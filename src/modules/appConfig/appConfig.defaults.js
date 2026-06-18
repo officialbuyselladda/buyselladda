@@ -37,6 +37,11 @@ const defaultAppConfig = {
     updateMessage: 'Please update the app to continue.',
     playStoreUrl: '',
     appStoreUrl: '',
+    autoApproveAds: true,
+    autoApproveAfterMinutes: 10,
+    freeMonthlyPostLimit: 3,
+    dealerMonthlyPostLimit: 30,
+    boostedSearchEnabled: true,
   },
   contact: {
     supportEmail: 'support@buyselladda.com',

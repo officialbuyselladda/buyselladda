@@ -3,8 +3,11 @@ import crypto from 'crypto';
 import User from '../user/user.model.js';
 import generateToken from '../../utils/generateToken.js';
 
+const createPublicToken = () => crypto.randomBytes(32).toString('hex');
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
 const register = async (userData) => {
-  const { name, email, password, phone = '' } = userData;
+  const { name, email, password, phone, userType = 'normal' } = userData;
 
   try {
     // Check if user already exists
@@ -23,9 +26,17 @@ const register = async (userData) => {
       email,
       password: hashedPassword,
       phone,
+      userType,
+      subscriptionGroup: userType === 'dealer' ? 'dealer' : 'free',
+      isEmailVerified: false,
+      emailVerificationToken: hashToken(createPublicToken()),
+      emailVerificationExpire: Date.now() + 24 * 60 * 60 * 1000,
     });
-    const token = generateToken(user._id);
-    return { user, token };
+    const verifyToken = createPublicToken();
+    user.emailVerificationToken = hashToken(verifyToken);
+    user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+    return { user, verifyToken };
   } catch (error) {
     if (error.statusCode) {
       throw error;
@@ -58,6 +69,11 @@ const login = async ({ email, password }) => {
     error.statusCode = 403;
     throw error;
   }
+  if (user.role !== 'admin' && !user.isEmailVerified) {
+    const error = new Error('Please verify your email before login. Check your inbox for the verification link.');
+    error.statusCode = 403;
+    throw error;
+  }
 
   const token = generateToken(user._id);
   return { user: user.toObject({ versionKey: false }), token };
@@ -66,7 +82,7 @@ const login = async ({ email, password }) => {
 const createPasswordResetToken = async (email) => {
   const user = await User.findOne({ email: String(email).toLowerCase() }).select('+resetPasswordToken +resetPasswordExpire');
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const hashedToken = hashToken(resetToken);
 
   if (user) {
     user.resetPasswordToken = hashedToken;
@@ -78,7 +94,7 @@ const createPasswordResetToken = async (email) => {
 };
 
 const resetPassword = async (token, password) => {
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = hashToken(token);
   const user = await User.findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() },
@@ -95,6 +111,28 @@ const resetPassword = async (token, password) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
+
+  const authToken = generateToken(user._id);
+  return { user: user.toObject({ versionKey: false }), token: authToken };
+};
+
+const verifyEmail = async (token) => {
+  const hashedToken = hashToken(token);
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpire: { $gt: Date.now() },
+  }).select('+emailVerificationToken +emailVerificationExpire');
+
+  if (!user) {
+    const error = new Error('Email verification link is invalid or expired.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpire = undefined;
+  await user.save({ validateBeforeSave: false });
 
   const authToken = generateToken(user._id);
   return { user: user.toObject({ versionKey: false }), token: authToken };
@@ -122,5 +160,5 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   return user.toObject({ versionKey: false });
 };
 
-export default { register, login, createPasswordResetToken, resetPassword, changePassword };
+export default { register, login, createPasswordResetToken, resetPassword, changePassword, verifyEmail };
 

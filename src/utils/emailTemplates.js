@@ -85,6 +85,18 @@ const templates = {
     ctaLabel: 'Open BuySellAdda',
     ctaUrl: appUrl(),
   }),
+  verifyEmail: ({ name, verifyUrl } = {}) => baseEmail({
+    preheader: 'Verify your BuySellAdda email address.',
+    eyebrow: 'Email verification',
+    title: 'Verify your email address',
+    body: `
+      <p style="margin:0 0 12px">Hi ${escapeHtml(name || 'there')}, thanks for creating your BuySellAdda account.</p>
+      <p style="margin:0">Please verify your email before signing in. This keeps marketplace accounts safer for buyers and sellers.</p>
+    `,
+    ctaLabel: 'Verify Email',
+    ctaUrl: verifyUrl,
+    note: 'This verification link is valid for 24 hours. If you did not create this account, you can ignore this email.',
+  }),
   loginAlert: ({ name, time, ip } = {}) => baseEmail({
     preheader: 'New login detected on your BuySellAdda account.',
     eyebrow: 'Security alert',

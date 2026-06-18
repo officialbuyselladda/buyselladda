@@ -1,7 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import authService from './auth.service.js';
 import sendResponse from '../../utils/responseHandler.js';
-import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation } from './auth.validation.js';
+import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation } from './auth.validation.js';
 import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
@@ -15,15 +15,17 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 
-  const { user, token } = await authService.register(req.body);
-  sendEmail(user.email, 'Welcome to BuySellAdda', templates.welcome(user.name)).catch((error) => {
-    console.warn('Welcome email failed:', error.message);
+  const { user, verifyToken } = await authService.register(req.body);
+  const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:3000';
+  const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
+  sendEmail(user.email, 'Verify your BuySellAdda email', templates.verifyEmail({ name: user.name, verifyUrl })).catch((error) => {
+    console.warn('Verification email failed:', error.message);
   });
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: 'User registered successfully',
-    data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role }, token },
+    message: 'Registration successful. Please verify your email before login.',
+    data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, isEmailVerified: user.isEmailVerified } },
   });
 });
 
@@ -56,6 +58,28 @@ const login = asyncHandler(async (req, res) => {
     statusCode: 200,
     message: 'Login successful',
     data: { user: { id: user._id, name: user.name, email: user.email, role: user.role, adminPermissions: user.adminPermissions || [] }, token },
+  });
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { error } = verifyEmailValidation.validate({ token: req.params.token });
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const { user, token } = await authService.verifyEmail(req.params.token);
+  sendEmail(user.email, 'Welcome to BuySellAdda', templates.welcome(user.name)).catch((emailError) => {
+    console.warn('Welcome email failed:', emailError.message);
+  });
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Email verified successfully. You are now logged in.',
+    data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, isEmailVerified: true }, token },
   });
 });
 
@@ -168,5 +192,5 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, adminLogin, forgotPassword, resetPassword, changePassword };
+export { register, login, adminLogin, forgotPassword, resetPassword, changePassword, verifyEmail };
 

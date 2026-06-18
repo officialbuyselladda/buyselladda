@@ -249,6 +249,7 @@ const createAdminRoleAccount = async (payload) => {
     password: hashedPassword,
     phone: payload.phone || '',
     role: 'admin',
+    isEmailVerified: true,
     isBlocked: Boolean(payload.isBlocked),
     adminPermissions: normalizeAdminPermissions(payload.adminPermissions),
   });
@@ -410,6 +411,54 @@ const getReports = async ({ page = 1, limit = 10, status = 'all', search }) => {
     limit: limitNum,
     pages: Math.ceil(total / limitNum),
   };
+};
+
+const escapeCsv = (value = '') => {
+  const text = String(value ?? '');
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+const getReportsExport = async (query = {}, format = 'csv') => {
+  const result = await getReports({ ...query, page: 1, limit: 10000 });
+  const rows = result.reports.map((report) => ({
+    id: report.productId,
+    title: report.title,
+    seller: report.user?.email || 'Unknown',
+    status: report.status,
+    date: report.date ? new Date(report.date).toISOString() : '',
+    details: report.details,
+  }));
+
+  if (format === 'pdf') {
+    const lines = [
+      'BuySellAdda Reports',
+      `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      '',
+      ...rows.map((row, index) => `${index + 1}. ${row.title} | ${row.seller} | ${row.status} | ${row.date}`),
+    ];
+    const content = lines
+      .join('\n')
+      .replace(/\\/g, '\\\\')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)');
+    const stream = `BT /F1 12 Tf 40 790 Td 14 TL (${content}) Tj ET`;
+    const objects = [
+      '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+      '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
+      '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
+      `5 0 obj << /Length ${Buffer.byteLength(stream)} >> stream\n${stream}\nendstream endobj`,
+    ];
+    const body = objects.join('\n');
+    return Buffer.from(`%PDF-1.4\n${body}\ntrailer << /Root 1 0 R >>\n%%EOF`);
+  }
+
+  const header = ['ID', 'Title', 'Seller', 'Status', 'Date', 'Details'];
+  const csv = [
+    header.join(','),
+    ...rows.map((row) => [row.id, row.title, row.seller, row.status, row.date, row.details].map(escapeCsv).join(',')),
+  ].join('\n');
+  return csv;
 };
 
 const getModerationQueue = async (query = {}) => {
@@ -589,6 +638,7 @@ const createUser = async (userData) => {
     phone: userData.phone || '',
     location: userData.location || '',
     role: userData.role || 'user',
+    isEmailVerified: true,
     isBlocked: Boolean(userData.isBlocked),
   });
 
@@ -665,6 +715,7 @@ export default {
   listChats,
   deleteChat,
   getReports,
+  getReportsExport,
   getModerationQueue,
   getAnalytics
 };

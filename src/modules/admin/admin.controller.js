@@ -380,6 +380,15 @@ const getReports = asyncHandler(async (req, res) => {
   });
 });
 
+const exportReports = asyncHandler(async (req, res) => {
+  const format = req.params.format === 'pdf' ? 'pdf' : 'csv';
+  const file = await adminService.getReportsExport(req.query, format);
+  const stamp = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Disposition', `attachment; filename="buyselladda-reports-${stamp}.${format}"`);
+  res.setHeader('Content-Type', format === 'pdf' ? 'application/pdf' : 'text/csv; charset=utf-8');
+  res.send(file);
+});
+
 const getModeration = asyncHandler(async (req, res) => {
   const moderation = await adminService.getModerationQueue(req.query);
   sendResponse(res, {
@@ -400,5 +409,5 @@ const getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, getModeration, getAnalytics };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, exportReports, getModeration, getAnalytics };
 

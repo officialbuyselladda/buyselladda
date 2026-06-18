@@ -19,6 +19,11 @@ const productSchema = mongoose.Schema({
     required: true,
     trim: true,
   },
+  subCategory: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   condition: {
     type: String,
     enum: ['New', 'Used'],
@@ -52,6 +57,11 @@ const productSchema = mongoose.Schema({
   isBoosted: {
     type: Boolean,
     default: false,
+    index: true,
+  },
+  boostedUntil: {
+    type: Date,
+    default: null,
     index: true,
   },
   status: {

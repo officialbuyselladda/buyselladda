@@ -41,6 +41,11 @@ const appConfigSchema = new mongoose.Schema({
     updateMessage: { type: String, trim: true, default: defaultAppConfig.controls.updateMessage },
     playStoreUrl: { type: String, trim: true, default: defaultAppConfig.controls.playStoreUrl },
     appStoreUrl: { type: String, trim: true, default: defaultAppConfig.controls.appStoreUrl },
+    autoApproveAds: { type: Boolean, default: defaultAppConfig.controls.autoApproveAds },
+    autoApproveAfterMinutes: { type: Number, default: defaultAppConfig.controls.autoApproveAfterMinutes, min: 1 },
+    freeMonthlyPostLimit: { type: Number, default: defaultAppConfig.controls.freeMonthlyPostLimit, min: 0 },
+    dealerMonthlyPostLimit: { type: Number, default: defaultAppConfig.controls.dealerMonthlyPostLimit, min: 0 },
+    boostedSearchEnabled: { type: Boolean, default: defaultAppConfig.controls.boostedSearchEnabled },
   },
   contact: {
     supportEmail: { type: String, trim: true, default: defaultAppConfig.contact.supportEmail },
