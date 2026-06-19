@@ -19,11 +19,25 @@ const createTransporter = async () => {
     host,
     port,
     secure,
+    requireTLS: !secure,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    tls: {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true,
+    },
   });
+};
+
+const verifyEmailTransport = async () => {
+  const transporter = await createTransporter();
+  await transporter.verify();
+  return true;
 };
 
 const sendEmail = async (to, subject, html) => {
@@ -32,6 +46,7 @@ const sendEmail = async (to, subject, html) => {
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_USER,
       to,
       subject,
       html,
@@ -45,4 +60,5 @@ const sendEmail = async (to, subject, html) => {
 };
 
 export default sendEmail;
+export { verifyEmailTransport };
 

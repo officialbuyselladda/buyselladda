@@ -153,6 +153,48 @@ const assertUserCanPostAd = async (user) => {
   }
 };
 
+export const getPostingEligibility = async (userId) => {
+  const user = await User.findById(userId).select('role userType subscriptionGroup adPostingLimits');
+  if (!user) throw new Error('User not found');
+  const limits = getSafeAdPostingLimits(user.adPostingLimits);
+  const monthlyLimit = await getMonthlyLimitForUser(user, limits);
+  const now = new Date();
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const dailyLimit = now.getDay() === 0 || now.getDay() === 6 ? limits.weekendDaily : limits.daily;
+  const [dailyUsed, monthlyUsed] = await Promise.all([
+    Product.countDocuments({ user: user._id, status: { $ne: 'deleted' }, createdAt: { $gte: dayStart } }),
+    Product.countDocuments({ user: user._id, status: { $ne: 'deleted' }, createdAt: { $gte: monthStart } }),
+  ]);
+  const unlimited = limits.unlimited || user.role === 'admin';
+  return {
+    canPost: unlimited || (dailyUsed < dailyLimit && monthlyUsed < monthlyLimit),
+    userType: user.userType,
+    subscriptionGroup: user.subscriptionGroup,
+    unlimited,
+    daily: { used: dailyUsed, limit: dailyLimit, remaining: unlimited ? null : Math.max(0, dailyLimit - dailyUsed) },
+    monthly: { used: monthlyUsed, limit: monthlyLimit, remaining: unlimited ? null : Math.max(0, monthlyLimit - monthlyUsed), resetsAt: nextMonth },
+  };
+};
+
+export const boostProduct = async (id, userId, durationDays = 7) => {
+  const user = await User.findById(userId).select('subscriptionGroup userType');
+  if (!user) throw new Error('User not found');
+  if (!['premium', 'dealer'].includes(user.subscriptionGroup) && user.userType !== 'dealer') {
+    const error = new Error('A Premium or Dealer subscription is required to promote an ad.');
+    error.statusCode = 403;
+    throw error;
+  }
+  const product = await Product.findOne({ _id: id, user: userId, status: 'approved' });
+  if (!product) throw new Error('Only your approved ads can be promoted');
+  product.isBoosted = true;
+  product.boostedUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+  await product.save();
+  return product;
+};
+
 // Generate unique slug from title + timestamp + random to prevent duplicates
 const generateSlug = (title) => {
   const timestamp = Date.now().toString(36);
@@ -178,6 +220,15 @@ export const createProduct = async (productData) => {
     const subCategoryName = await normalizeCategory(productData.subCategory, { requireActive: true });
     if (!subCategoryName) throw new Error('Please choose a valid active sub category');
     productData.subCategory = subCategoryName;
+    const [parentCategory, childCategory] = await Promise.all([
+      Category.findOne({ name: categoryName, isActive: true }).select('_id').lean(),
+      Category.findOne({ name: subCategoryName, isActive: true }).select('parent').lean(),
+    ]);
+    if (!parentCategory || !childCategory?.parent || childCategory.parent.toString() !== parentCategory._id.toString()) {
+      const error = new Error('Please choose a sub category that belongs to the selected main category');
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
   // Banned words check
@@ -261,6 +312,7 @@ if (html) {
 };
 
 export const getProducts = async (query) => {
+  await Product.updateMany({ isBoosted: true, boostedUntil: { $lte: new Date() } }, { isBoosted: false, boostedUntil: null });
   const page = parseInt(query.page) || 1;
   const limit = parseInt(query.limit) || 10;
   const skip = (page - 1) * limit;
@@ -457,6 +509,8 @@ export const updateProduct = async (id, updateData, userId) => {
   }
 
   delete updateData.status;
+  delete updateData.isBoosted;
+  delete updateData.boostedUntil;
   if (updateData.category) {
     const categoryName = await normalizeCategory(updateData.category, { requireActive: true });
     if (!categoryName) throw new Error('Please choose a valid active category');

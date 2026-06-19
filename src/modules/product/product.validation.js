@@ -22,7 +22,7 @@ const createProductValidation = Joi.object({
   images: Joi.array().items(imageSchema).min(1).required(),
   location: Joi.string().trim().min(2).max(200).required(),
   locationCoords: locationCoordsSchema.optional(),
-  isBoosted: Joi.boolean().optional(),
+  // Promotion is controlled by the subscription endpoint, never by listing input.
 });
 
 const updateProductValidation = Joi.object({
@@ -35,12 +35,16 @@ const updateProductValidation = Joi.object({
   images: Joi.array().items(imageSchema).min(1).optional(),
   location: Joi.string().trim().min(2).max(200).optional(),
   locationCoords: locationCoordsSchema.optional(),
-  isBoosted: Joi.boolean().optional(),
+  // Promotion is controlled by the subscription endpoint, never by listing input.
   status: Joi.string().valid('approved', 'paused', 'sold').optional(),
 }).min(1);
 
 const productIdParamValidation = Joi.object({
   id: Joi.string().pattern(objectIdRegex).required(),
+});
+
+const boostProductValidation = Joi.object({
+  durationDays: Joi.number().integer().min(1).max(30).default(7),
 });
 
 const productListQueryValidation = Joi.object({
@@ -80,4 +84,5 @@ export {
   productListQueryValidation,
   myProductsQueryValidation,
   recommendationsQueryValidation,
+  boostProductValidation,
 };

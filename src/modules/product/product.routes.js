@@ -12,6 +12,7 @@ const router = Router();
 router.get('/', asyncHandler(productController.getProducts));
 router.get('/recommendations', asyncHandler(productController.getRecommendations));
 router.get('/my-products', auth, asyncHandler(productController.getMyProducts));
+router.get('/posting-eligibility', auth, asyncHandler(productController.getPostingEligibility));
 router.get('/my-products/:id', auth, asyncHandler(productController.getMyProduct));
 router.get('/:id', asyncHandler(productController.getProduct));
 
@@ -54,6 +55,7 @@ router.post('/:id/contact', auth, asyncHandler(async (req, res) => {
 
 router.post('/', auth, createProductPostLimiter, asyncHandler(productController.createProduct));
 router.put('/:id', auth, asyncHandler(productController.updateProduct));
+router.post('/:id/boost', auth, asyncHandler(productController.boostProduct));
 router.delete('/:id', auth, asyncHandler(productController.deleteProduct));
 
 export default router;

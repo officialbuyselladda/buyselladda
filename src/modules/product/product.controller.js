@@ -8,7 +8,9 @@ import {
   updateProduct, 
   deleteProduct, 
   getMyProducts, 
-  getRecommendations 
+  getRecommendations,
+  getPostingEligibility,
+  boostProduct,
 } from './product.service.js';
 import {
   createProductValidation,
@@ -17,6 +19,7 @@ import {
   productListQueryValidation,
   myProductsQueryValidation,
   recommendationsQueryValidation,
+  boostProductValidation,
 } from './product.validation.js';
 
 const createProductHandler = asyncHandler(async (req, res) => {
@@ -163,6 +166,23 @@ const getRecommendationsHandler = asyncHandler(async (req, res) => {
   });
 });
 
+const getPostingEligibilityHandler = asyncHandler(async (req, res) => {
+  const eligibility = await getPostingEligibility(req.user._id);
+  sendResponse(res, { success: true, statusCode: 200, message: 'Posting eligibility fetched', data: eligibility });
+});
+
+const boostProductHandler = asyncHandler(async (req, res) => {
+  const params = productIdParamValidation.validate({ id: req.params.id });
+  const body = boostProductValidation.validate(req.body || {});
+  if (params.error || body.error) {
+    const err = new Error((params.error || body.error).details[0].message);
+    err.statusCode = 400;
+    throw err;
+  }
+  const product = await boostProduct(req.params.id, req.user._id, body.value.durationDays);
+  sendResponse(res, { success: true, statusCode: 200, message: 'Ad promoted successfully', data: product });
+});
+
 export { 
   createProductHandler as createProduct, 
   getProductsHandler as getProducts, 
@@ -171,6 +191,8 @@ export {
   updateProductHandler as updateProduct, 
   deleteProductHandler as deleteProduct, 
   getMyProductsHandler as getMyProducts, 
-  getRecommendationsHandler as getRecommendations 
+  getRecommendationsHandler as getRecommendations,
+  getPostingEligibilityHandler as getPostingEligibility,
+  boostProductHandler as boostProduct,
 };
 
