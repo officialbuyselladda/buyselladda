@@ -1,7 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import authService from './auth.service.js';
 import sendResponse from '../../utils/responseHandler.js';
-import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation } from './auth.validation.js';
+import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation } from './auth.validation.js';
 import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
@@ -15,13 +15,13 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 
-  const { user, verifyToken } = await authService.register(req.body);
+  const { user, verifyToken, verifyOtp } = await authService.register(req.body);
   const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:3000';
   const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
   let emailSent = true;
   let emailError = null;
   try {
-    await sendEmail(user.email, 'Verify your BuySellAdda email', templates.verifyEmail({ name: user.name, verifyUrl }));
+    await sendEmail(user.email, 'Verify your BuySellAdda email', templates.verifyEmail({ name: user.name, verifyUrl, otp: verifyOtp }));
   } catch (error) {
     emailSent = false;
     emailError = error.message;
@@ -93,6 +93,33 @@ const verifyEmail = asyncHandler(async (req, res) => {
     message: 'Email verified successfully. You are now logged in.',
     data: { user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, isEmailVerified: true }, token },
   });
+});
+
+const verifyEmailOtp = asyncHandler(async (req, res) => {
+  const { error, value } = verifyEmailOtpValidation.validate(req.body);
+  if (error) return sendResponse(res, { success: false, statusCode: 400, message: error.details[0].message });
+  const { user, token } = await authService.verifyEmailOtp(value.email, value.otp);
+  sendEmail(user.email, 'Welcome to BuySellAdda', templates.welcome(user.name)).catch((emailError) => {
+    console.warn('Welcome email failed:', emailError.message);
+  });
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Email verified successfully.',
+    data: { user, token },
+  });
+});
+
+const resendVerification = asyncHandler(async (req, res) => {
+  const { error, value } = verifyEmailOtpValidation.fork(['otp'], (schema) => schema.optional()).validate(req.body);
+  if (error) return sendResponse(res, { success: false, statusCode: 400, message: error.details[0].message });
+  const { user, verifyToken, verifyOtp } = await authService.createEmailVerification(value.email);
+  if (user) {
+    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
+    await sendEmail(user.email, 'Your BuySellAdda verification code', templates.verifyEmail({ name: user.name, verifyUrl, otp: verifyOtp }));
+  }
+  sendResponse(res, { success: true, statusCode: 200, message: 'If the account is unverified, a new verification email has been sent.' });
 });
 
 const adminLogin = asyncHandler(async (req, res) => {
@@ -204,5 +231,5 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, adminLogin, forgotPassword, resetPassword, changePassword, verifyEmail };
+export { register, login, adminLogin, forgotPassword, resetPassword, changePassword, verifyEmail, verifyEmailOtp, resendVerification };
 

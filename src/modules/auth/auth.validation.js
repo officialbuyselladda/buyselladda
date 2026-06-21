@@ -62,6 +62,11 @@ const verifyEmailValidation = Joi.object({
   token: Joi.string().trim().min(20).required(),
 });
 
+const verifyEmailOtpValidation = Joi.object({
+  email: Joi.string().trim().email().required(),
+  otp: Joi.string().trim().pattern(/^\d{6}$/).required(),
+});
+
 const changePasswordValidation = Joi.object({
   currentPassword: Joi.string().min(1).required()
     .messages({
@@ -77,5 +82,5 @@ const changePasswordValidation = Joi.object({
     }),
 });
 
-export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation };
+export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation };
 

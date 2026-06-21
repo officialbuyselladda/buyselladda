@@ -63,6 +63,14 @@ const userSchema = mongoose.Schema({
     type: Date,
     select: false,
   },
+  emailVerificationOtp: {
+    type: String,
+    select: false,
+  },
+  emailVerificationOtpExpire: {
+    type: Date,
+    select: false,
+  },
   isBlocked: {
     type: Boolean,
     default: false

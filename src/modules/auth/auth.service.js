@@ -4,6 +4,7 @@ import User from '../user/user.model.js';
 import generateToken from '../../utils/generateToken.js';
 
 const createPublicToken = () => crypto.randomBytes(32).toString('hex');
+const createOtp = () => crypto.randomInt(100000, 1000000).toString();
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const register = async (userData) => {
@@ -29,14 +30,15 @@ const register = async (userData) => {
       userType,
       subscriptionGroup: userType === 'dealer' ? 'dealer' : 'free',
       isEmailVerified: false,
-      emailVerificationToken: hashToken(createPublicToken()),
-      emailVerificationExpire: Date.now() + 24 * 60 * 60 * 1000,
     });
     const verifyToken = createPublicToken();
+    const verifyOtp = createOtp();
     user.emailVerificationToken = hashToken(verifyToken);
     user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000;
+    user.emailVerificationOtp = hashToken(verifyOtp);
+    user.emailVerificationOtpExpire = Date.now() + 10 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
-    return { user, verifyToken };
+    return { user, verifyToken, verifyOtp };
   } catch (error) {
     if (error.statusCode) {
       throw error;
@@ -132,10 +134,46 @@ const verifyEmail = async (token) => {
   user.isEmailVerified = true;
   user.emailVerificationToken = undefined;
   user.emailVerificationExpire = undefined;
+  user.emailVerificationOtp = undefined;
+  user.emailVerificationOtpExpire = undefined;
   await user.save({ validateBeforeSave: false });
 
   const authToken = generateToken(user._id);
   return { user: user.toObject({ versionKey: false }), token: authToken };
+};
+
+const verifyEmailOtp = async (email, otp) => {
+  const user = await User.findOne({
+    email: String(email).trim().toLowerCase(),
+    emailVerificationOtp: hashToken(String(otp)),
+    emailVerificationOtpExpire: { $gt: Date.now() },
+  }).select('+emailVerificationToken +emailVerificationExpire +emailVerificationOtp +emailVerificationOtpExpire');
+  if (!user) {
+    const error = new Error('Verification OTP is invalid or expired.');
+    error.statusCode = 400;
+    throw error;
+  }
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpire = undefined;
+  user.emailVerificationOtp = undefined;
+  user.emailVerificationOtpExpire = undefined;
+  await user.save({ validateBeforeSave: false });
+  return { user: user.toObject({ versionKey: false }), token: generateToken(user._id) };
+};
+
+const createEmailVerification = async (email) => {
+  const user = await User.findOne({ email: String(email).trim().toLowerCase() })
+    .select('+emailVerificationToken +emailVerificationExpire +emailVerificationOtp +emailVerificationOtpExpire');
+  if (!user || user.isEmailVerified) return { user: null };
+  const verifyToken = createPublicToken();
+  const verifyOtp = createOtp();
+  user.emailVerificationToken = hashToken(verifyToken);
+  user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000;
+  user.emailVerificationOtp = hashToken(verifyOtp);
+  user.emailVerificationOtpExpire = Date.now() + 10 * 60 * 1000;
+  await user.save({ validateBeforeSave: false });
+  return { user, verifyToken, verifyOtp };
 };
 
 const changePassword = async (userId, currentPassword, newPassword) => {
@@ -160,5 +198,5 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   return user.toObject({ versionKey: false });
 };
 
-export default { register, login, createPasswordResetToken, resetPassword, changePassword, verifyEmail };
+export default { register, login, createPasswordResetToken, resetPassword, changePassword, verifyEmail, verifyEmailOtp, createEmailVerification };
 

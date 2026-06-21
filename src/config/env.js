@@ -1,7 +1,14 @@
 import dotenv from 'dotenv';
 import Joi from 'joi';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, '../../.env');
+
+// PM2 may start the process from a different working directory on the VPS.
+// Resolve .env from the backend itself so the configured port is always loaded.
+dotenv.config({ path: envPath });
 
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('production', 'development', 'test').default('development'),

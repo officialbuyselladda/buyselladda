@@ -1,15 +1,13 @@
 import app from './src/app.js';
 import connectDB from './src/config/db.js';
-import dotenv from 'dotenv';
+import env from './src/config/env.js';
 import initSocket from './src/config/socket.js';
 import fs from 'fs';
 import path from 'path';
 import { startProductAutoApprovalJob } from './src/jobs/productAutoApproval.job.js';
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5000;
-const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
+const PORT = env.PORT;
+const HTTPS_PORT = env.HTTPS_PORT;
 
 // Check if SSL certificates exist for HTTPS
 let sslOptions = null;
