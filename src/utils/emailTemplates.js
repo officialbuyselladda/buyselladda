@@ -5,7 +5,7 @@ const appUrl = () => (
   process.env.CLIENT_URL
   || process.env.FRONTEND_URL
   || process.env.WEBSITE_URL
-  || 'http://localhost:3000'
+  || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 
 const escapeHtml = (value = '') => String(value)

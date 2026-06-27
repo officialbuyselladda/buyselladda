@@ -5,6 +5,13 @@ import { registerValidation, loginValidation, forgotPasswordValidation, resetPas
 import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
+const getClientUrl = () => (
+  process.env.CLIENT_URL
+  || process.env.FRONTEND_URL
+  || process.env.WEBSITE_URL
+  || 'https://buyselladda.com'
+).replace(/\/$/, '');
+
 const register = asyncHandler(async (req, res) => {
   const { error } = registerValidation.validate(req.body);
   if (error) {
@@ -16,8 +23,8 @@ const register = asyncHandler(async (req, res) => {
   }
 
   const { user, verifyToken, verifyOtp } = await authService.register(req.body);
-  const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
-  const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
+  const clientUrl = getClientUrl();
+  const verifyUrl = `${clientUrl}/verify-email/${verifyToken}`;
   let emailSent = true;
   let emailError = null;
   try {
@@ -115,8 +122,8 @@ const resendVerification = asyncHandler(async (req, res) => {
   if (error) return sendResponse(res, { success: false, statusCode: 400, message: error.details[0].message });
   const { user, verifyToken, verifyOtp } = await authService.createEmailVerification(value.email);
   if (user) {
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
-    const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
+    const clientUrl = getClientUrl();
+    const verifyUrl = `${clientUrl}/verify-email/${verifyToken}`;
     await sendEmail(user.email, 'Your BuySellAdda verification code', templates.verifyEmail({ name: user.name, verifyUrl, otp: verifyOtp }));
   }
   sendResponse(res, { success: true, statusCode: 200, message: 'If the account is unverified, a new verification email has been sent.' });
@@ -172,8 +179,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const { user, resetToken } = await authService.createPasswordResetToken(req.body.email);
   if (user) {
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
-    const resetUrl = `${clientUrl.replace(/\/$/, '')}/reset-password/${resetToken}`;
+    const clientUrl = getClientUrl();
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
     await sendEmail(user.email, 'Reset your BuySellAdda password', templates.passwordReset(resetUrl));
   }
 

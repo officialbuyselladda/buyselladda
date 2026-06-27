@@ -14,7 +14,7 @@ app.set('etag', false);
 const isProduction = process.env.NODE_ENV === 'production';
 // For VPS, allow dynamic origins or use environment variable
 const allowedOrigins = isProduction 
-  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://buyselladda.in', 'https://www.buyselladda.in'])
+  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://buyselladda.com', 'https://www.buyselladda.com'])
   : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://72.60.102.36:5173', 'http://72.60.102.36'];
 
 app.use(helmet({

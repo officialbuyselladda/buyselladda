@@ -94,7 +94,7 @@ const getClientUrl = () => (
   process.env.CLIENT_URL
   || process.env.FRONTEND_URL
   || process.env.WEBSITE_URL
-  || 'https://dealkro.in'
+  || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 
 const verifyUserEmail = async (id) => {
