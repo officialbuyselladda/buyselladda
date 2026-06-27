@@ -16,7 +16,7 @@ const register = asyncHandler(async (req, res) => {
   }
 
   const { user, verifyToken, verifyOtp } = await authService.register(req.body);
-  const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:3000';
+  const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
   const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
   let emailSent = true;
   let emailError = null;
@@ -115,7 +115,7 @@ const resendVerification = asyncHandler(async (req, res) => {
   if (error) return sendResponse(res, { success: false, statusCode: 400, message: error.details[0].message });
   const { user, verifyToken, verifyOtp } = await authService.createEmailVerification(value.email);
   if (user) {
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
     const verifyUrl = `${clientUrl.replace(/\/$/, '')}/verify-email/${verifyToken}`;
     await sendEmail(user.email, 'Your BuySellAdda verification code', templates.verifyEmail({ name: user.name, verifyUrl, otp: verifyOtp }));
   }
@@ -172,7 +172,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const { user, resetToken } = await authService.createPasswordResetToken(req.body.email);
   if (user) {
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.WEBSITE_URL || 'http://localhost:5173';
     const resetUrl = `${clientUrl.replace(/\/$/, '')}/reset-password/${resetToken}`;
     await sendEmail(user.email, 'Reset your BuySellAdda password', templates.passwordReset(resetUrl));
   }
