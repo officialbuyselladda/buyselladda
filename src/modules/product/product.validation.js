@@ -52,6 +52,7 @@ const productListQueryValidation = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(10),
   cursor: Joi.string().pattern(objectIdRegex).optional(),
   category: Joi.string().trim().min(2).max(100).optional(),
+  subCategory: Joi.string().trim().min(2).max(100).optional(),
   search: Joi.string().trim().allow('', null).optional(),
   location: Joi.string().trim().allow('', null).optional(),
   minPrice: Joi.number().min(0).optional().allow(null, ''),
@@ -73,6 +74,7 @@ const recommendationsQueryValidation = Joi.object({
   limit: Joi.number().integer().min(1).max(30).default(10),
   search: Joi.string().trim().allow('', null).optional(),
   category: Joi.string().trim().min(2).max(100).optional(),
+  subCategory: Joi.string().trim().min(2).max(100).optional(),
   excludeProductId: Joi.string().pattern(objectIdRegex).optional(),
   similarTo: Joi.string().pattern(objectIdRegex).optional(),
 }).unknown(false);

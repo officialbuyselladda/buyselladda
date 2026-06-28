@@ -122,24 +122,41 @@ const getCategoryTree = async () => {
     .lean();
 
   const Product = (await import('../product/product.model.js')).default;
+  const categoryNames = categories.map((cat) => cat.name);
   const productCounts = await Product.aggregate([
-    { $match: { status: 'approved', category: { $in: categories.map((cat) => cat.name) } } },
-    { $group: { _id: '$category', count: { $sum: 1 } } }
+    {
+      $match: {
+        status: 'approved',
+        $or: [
+          { category: { $in: categoryNames } },
+          { subCategory: { $in: categoryNames } },
+        ],
+      },
+    },
+    {
+      $facet: {
+        main: [{ $group: { _id: '$category', count: { $sum: 1 } } }],
+        sub: [{ $match: { subCategory: { $nin: [null, ''] } } }, { $group: { _id: '$subCategory', count: { $sum: 1 } } }],
+      },
+    },
   ]);
-  const countMap = {};
-  productCounts.forEach((item) => { countMap[item._id] = item.count; });
+  const mainCountMap = {};
+  const subCountMap = {};
+  (productCounts[0]?.main || []).forEach((item) => { mainCountMap[item._id] = item.count; });
+  (productCounts[0]?.sub || []).forEach((item) => { subCountMap[item._id] = item.count; });
 
   // 🔥 SAFE TREE BUILD (NO POPULATE CRASH)
   const map = {};
   const roots = [];
 
   categories.forEach(cat => {
-    map[cat._id] = { ...cat, productsCount: countMap[cat.name] || 0, children: [] };
+    map[cat._id] = { ...cat, productsCount: mainCountMap[cat.name] || subCountMap[cat.name] || 0, children: [] };
   });
 
   categories.forEach(cat => {
     if (cat.parent && map[cat.parent]) {
       map[cat.parent].children.push(map[cat._id]);
+      map[cat.parent].productsCount += map[cat._id].productsCount || 0;
     } else {
       roots.push(map[cat._id]);
     }
@@ -179,12 +196,26 @@ const listCategoriesAdmin = async ({ page = 1, limit = 10, search, status }) => 
   const Product = (await import('../product/product.model.js')).default;
   const categoryNames = categories.map(c => c.name);
   const productCounts = await Product.aggregate([
-    { $match: { category: { $in: categoryNames }, status: 'approved' } },
-    { $group: { _id: '$category', count: { $sum: 1 } } }
+    {
+      $match: {
+        status: 'approved',
+        $or: [
+          { category: { $in: categoryNames } },
+          { subCategory: { $in: categoryNames } },
+        ],
+      },
+    },
+    {
+      $facet: {
+        main: [{ $group: { _id: '$category', count: { $sum: 1 } } }],
+        sub: [{ $match: { subCategory: { $nin: [null, ''] } } }, { $group: { _id: '$subCategory', count: { $sum: 1 } } }],
+      },
+    },
   ]);
   
   const countMap = {};
-  productCounts.forEach(p => { countMap[p._id] = p.count; });
+  (productCounts[0]?.main || []).forEach(p => { countMap[p._id] = (countMap[p._id] || 0) + p.count; });
+  (productCounts[0]?.sub || []).forEach(p => { countMap[p._id] = (countMap[p._id] || 0) + p.count; });
   
   categories.forEach(c => {
     c.productCount = countMap[c.name] || 0;

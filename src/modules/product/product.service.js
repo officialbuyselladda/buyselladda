@@ -85,7 +85,8 @@ const normalizeCategory = async (category, { requireActive = false } = {}) => {
   if (dbCategory) return dbCategory.name;
 
   const fallback = FALLBACK_CATEGORIES.find((cat) => slugify(cat) === normalizedSlug || cat.toLowerCase() === raw.toLowerCase());
-  return fallback || (requireActive ? null : raw);
+  if (fallback) return fallback;
+  return requireActive ? null : raw;
 };
 
 const isImageSetSafe = (images = []) => {
@@ -224,7 +225,7 @@ export const createProduct = async (productData) => {
       Category.findOne({ name: categoryName, isActive: true }).select('_id').lean(),
       Category.findOne({ name: subCategoryName, isActive: true }).select('parent').lean(),
     ]);
-    if (!parentCategory || !childCategory?.parent || childCategory.parent.toString() !== parentCategory._id.toString()) {
+    if (parentCategory && childCategory?.parent && childCategory.parent.toString() !== parentCategory._id.toString()) {
       const error = new Error('Please choose a sub category that belongs to the selected main category');
       error.statusCode = 400;
       throw error;
@@ -337,7 +338,8 @@ export const getProducts = async (query) => {
   let hasMore = false;
   let geoUsed = false;
   const categoryName = query.category ? await normalizeCategory(query.category, { requireActive: true }) : null;
-  if (query.category && !categoryName) {
+  const subCategoryName = query.subCategory ? await normalizeCategory(query.subCategory, { requireActive: true }) : null;
+  if ((query.category && !categoryName) || (query.subCategory && !subCategoryName)) {
     return {
       products: [],
       pagination: {
@@ -363,6 +365,7 @@ export const getProducts = async (query) => {
       const matchStage = {
         status: 'approved',
         ...(categoryName && { category: categoryName }),
+        ...(subCategoryName && { subCategory: subCategoryName }),
         ...(Object.keys(priceFilter).length && { price: priceFilter })
       };
 
@@ -411,6 +414,7 @@ export const getProducts = async (query) => {
   if (!geoUsed || !products) {
     const filter = { status: 'approved' };
     if (categoryName) filter.category = categoryName;
+    if (subCategoryName) filter.subCategory = subCategoryName;
     if (query.location) filter.location = { $regex: query.location, $options: 'i' };
     if (query.search) filter.$text = { $search: query.search };
     if (Object.keys(priceFilter).length) filter.price = priceFilter;
@@ -442,6 +446,7 @@ export const getProducts = async (query) => {
 
   const countFilter = { status: 'approved' };
   if (categoryName) countFilter.category = categoryName;
+  if (subCategoryName) countFilter.subCategory = subCategoryName;
   if (query.location) countFilter.location = { $regex: query.location, $options: 'i' };
   if (Object.keys(priceFilter).length) countFilter.price = priceFilter;
   if (query.search) countFilter.$text = { $search: query.search };
