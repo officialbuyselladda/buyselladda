@@ -82,15 +82,43 @@ const login = async ({ email, password }) => {
 };
 
 const createPasswordResetToken = async (email) => {
-  const user = await User.findOne({ email: String(email).toLowerCase() }).select('+resetPasswordToken +resetPasswordExpire');
+  const user = await User.findOne({ email: String(email).trim().toLowerCase() }).select('+resetPasswordToken +resetPasswordExpire +resetPasswordOtp +resetPasswordOtpExpire');
   const resetToken = crypto.randomBytes(32).toString('hex');
   const hashedToken = hashToken(resetToken);
+  const resetOtp = createOtp();
+  const hashedOtp = hashToken(resetOtp);
 
   if (user) {
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+    user.resetPasswordOtp = hashedOtp;
+    user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
   }
+
+  return { user, resetToken, resetOtp };
+};
+
+const verifyResetOtp = async (email, otp) => {
+  const user = await User.findOne({
+    email: String(email).trim().toLowerCase(),
+    resetPasswordOtp: hashToken(String(otp)),
+    resetPasswordOtpExpire: { $gt: Date.now() },
+  }).select('+resetPasswordToken +resetPasswordExpire +resetPasswordOtp +resetPasswordOtpExpire');
+  if (!user) {
+    const error = new Error('Reset OTP is invalid or expired.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Generate a fresh reset token for the client to use
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  user.resetPasswordToken = hashToken(resetToken);
+  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  // Clear OTP fields after successful verification
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpExpire = undefined;
+  await user.save({ validateBeforeSave: false });
 
   return { user, resetToken };
 };
@@ -112,6 +140,8 @@ const resetPassword = async (token, password) => {
   user.password = await bcrypt.hash(password, salt);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpExpire = undefined;
   await user.save();
 
   const authToken = generateToken(user._id);
@@ -198,5 +228,4 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   return user.toObject({ versionKey: false });
 };
 
-export default { register, login, createPasswordResetToken, resetPassword, changePassword, verifyEmail, verifyEmailOtp, createEmailVerification };
-
+export default { register, login, createPasswordResetToken, verifyResetOtp, resetPassword, changePassword, verifyEmail, verifyEmailOtp, createEmailVerification };

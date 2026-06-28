@@ -660,6 +660,36 @@ const updateUser = async (id, updateData) => {
   return safeUser;
 };
 
+const resetUserPassword = async (id, password, adminUser) => {
+  const user = await User.findById(id).select('+password');
+  if (!user) throw new Error('User not found');
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpExpire = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  if (user.email) {
+    sendEmail(
+      user.email,
+      'Your BuySellAdda password was updated by admin',
+      templates.passwordChanged(user.name),
+    ).catch((error) => {
+      console.warn('Admin password reset email failed:', error.message);
+    });
+  }
+
+  const safeUser = user.toObject();
+  delete safeUser.password;
+  safeUser.status = safeUser.isBlocked ? 'blocked' : 'active';
+  safeUser.emailStatus = safeUser.isEmailVerified ? 'verified' : 'unverified';
+  safeUser.passwordUpdatedBy = adminUser?.email || adminUser?._id || 'admin';
+  return safeUser;
+};
+
 const getUserDetail = async (id) => {
   const user = await User.findById(id).select('-password').lean();
   if (!user) throw new Error('User not found');
@@ -760,6 +790,7 @@ export default {
   getUserDetail,
   toggleUserBlock,
   updateUser,
+  resetUserPassword,
   verifyUserEmail,
   resendUserVerificationEmail,
   updateUserAdLimits,
@@ -775,4 +806,3 @@ export default {
   getModerationQueue,
   getAnalytics
 };
-

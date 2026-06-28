@@ -58,6 +58,19 @@ const resetPasswordValidation = Joi.object({
     }),
 });
 
+const verifyResetOtpValidation = Joi.object({
+  email: Joi.string().trim().email().required()
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+    }),
+  otp: Joi.string().trim().pattern(/^\d{6}$/).required()
+    .messages({
+      'string.empty': 'OTP is required',
+      'string.pattern.base': 'OTP must be a 6 digit code',
+    }),
+});
+
 const verifyEmailValidation = Joi.object({
   token: Joi.string().trim().min(20).required(),
 });
@@ -82,5 +95,5 @@ const changePasswordValidation = Joi.object({
     }),
 });
 
-export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation };
+export { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, verifyResetOtpValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation };
 

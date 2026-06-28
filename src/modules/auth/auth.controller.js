@@ -1,7 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import authService from './auth.service.js';
 import sendResponse from '../../utils/responseHandler.js';
-import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation } from './auth.validation.js';
+import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation, verifyResetOtpValidation, changePasswordValidation, verifyEmailValidation, verifyEmailOtpValidation } from './auth.validation.js';
 import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
@@ -177,17 +177,36 @@ const forgotPassword = asyncHandler(async (req, res) => {
     });
   }
 
-  const { user, resetToken } = await authService.createPasswordResetToken(req.body.email);
+  const { user, resetToken, resetOtp } = await authService.createPasswordResetToken(req.body.email);
   if (user) {
     const clientUrl = getClientUrl();
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
-    await sendEmail(user.email, 'Reset your BuySellAdda password', templates.passwordReset(resetUrl));
+    await sendEmail(user.email, 'Reset your BuySellAdda password', templates.passwordReset({ resetUrl, otp: resetOtp, name: user.name }));
   }
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'If this email exists, password reset instructions have been sent.',
+    message: 'If this email exists, a password reset OTP has been sent.',
+  });
+});
+
+const verifyResetOtp = asyncHandler(async (req, res) => {
+  const { error, value } = verifyResetOtpValidation.validate(req.body);
+  if (error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const { resetToken } = await authService.verifyResetOtp(value.email, value.otp);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'OTP verified. You can now set a new password.',
+    data: { resetToken },
   });
 });
 
@@ -238,5 +257,4 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, adminLogin, forgotPassword, resetPassword, changePassword, verifyEmail, verifyEmailOtp, resendVerification };
-
+export { register, login, adminLogin, forgotPassword, verifyResetOtp, resetPassword, changePassword, verifyEmail, verifyEmailOtp, resendVerification };

@@ -39,6 +39,15 @@ export const updateUserValidation = Joi.object({
   isBlocked: Joi.boolean().optional()
 }).min(1);
 
+export const resetUserPasswordValidation = Joi.object({
+  password: Joi.string().min(6).max(128).required()
+    .messages({
+      'string.empty': 'New password is required',
+      'string.min': 'New password must be at least {#limit} characters',
+      'string.max': 'New password cannot exceed {#limit} characters',
+    }),
+});
+
 export const toggleUserBlockValidation = Joi.object({
   id: Joi.string().required()
 });
@@ -86,6 +95,10 @@ export const adminPermissionsList = [
   'systemSettings',
   'adminRoles',
   'appControl',
+  'homeControl',
+  'featureControl',
+  'trustSafety',
+  'growthControl',
 ];
 
 export const adminRoleAccountValidation = Joi.object({

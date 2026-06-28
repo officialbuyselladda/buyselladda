@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import sendResponse from '../../utils/responseHandler.js';
 import adminService from './admin.service.js';
 import dashboardService from './dashboard.service.js';
-import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation, adminRoleAccountValidation, updateAdminRoleAccountValidation, userEmailVerificationValidation } from './admin.validation.js';
+import { deleteUserValidation, deleteProductValidation, approveProductValidation, rejectProductValidation, listValidation, userDetailValidation, toggleUserBlockValidation, updateUserValidation, resetUserPasswordValidation, createUserValidation, adPostingLimitsValidation, bulkAdPostingLimitsValidation, adminRoleAccountValidation, updateAdminRoleAccountValidation, userEmailVerificationValidation } from './admin.validation.js';
 
 const getDashboard = asyncHandler(async (req, res) => {
   const stats = await dashboardService.getDashboardStats();
@@ -186,6 +186,34 @@ const updateUser = asyncHandler(async (req, res) => {
     success: true,
     statusCode: 200,
     message: 'User updated',
+    data: user,
+  });
+});
+
+const resetUserPassword = asyncHandler(async (req, res) => {
+  const paramValidation = userDetailValidation.validate({ id: req.params.id });
+  if (paramValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: paramValidation.error.details[0].message,
+    });
+  }
+
+  const bodyValidation = resetUserPasswordValidation.validate(req.body);
+  if (bodyValidation.error) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: 400,
+      message: bodyValidation.error.details[0].message,
+    });
+  }
+
+  const user = await adminService.resetUserPassword(req.params.id, bodyValidation.value.password, req.user);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User password updated successfully',
     data: user,
   });
 });
@@ -448,5 +476,5 @@ const getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, verifyUserEmail, resendUserVerificationEmail, updateUser, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, exportReports, getModeration, getAnalytics };
+export { getDashboard, deleteUser, deleteProduct, approveProduct, rejectProduct, getProducts, getUsers, getUserLimits, createUser, getUserDetail, toggleUserBlock, verifyUserEmail, resendUserVerificationEmail, updateUser, resetUserPassword, updateUserAdLimits, bulkUpdateUserAdLimits, getAdminRoleAccounts, createAdminRoleAccount, updateAdminRoleAccount, deleteAdminRoleAccount, getChats, deleteChat, getReports, exportReports, getModeration, getAnalytics };
 

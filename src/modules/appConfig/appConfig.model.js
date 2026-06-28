@@ -53,6 +53,22 @@ const appConfigSchema = new mongoose.Schema({
     privacyUrl: { type: String, trim: true, default: defaultAppConfig.contact.privacyUrl },
     termsUrl: { type: String, trim: true, default: defaultAppConfig.contact.termsUrl },
   },
+  homeLayout: {
+    type: mongoose.Schema.Types.Mixed,
+    default: defaultAppConfig.homeLayout,
+  },
+  features: {
+    type: mongoose.Schema.Types.Mixed,
+    default: defaultAppConfig.features,
+  },
+  trustSafety: {
+    type: mongoose.Schema.Types.Mixed,
+    default: defaultAppConfig.trustSafety,
+  },
+  growth: {
+    type: mongoose.Schema.Types.Mixed,
+    default: defaultAppConfig.growth,
+  },
 }, { timestamps: true });
 
 const AppConfig = mongoose.model('AppConfig', appConfigSchema);

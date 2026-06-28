@@ -37,6 +37,7 @@ router.put('/users/:id/block', auth, admin, permit('users'), asyncHandler(adminC
 router.put('/users/:id/verify-email', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
 router.patch('/users/:id/verify-email', auth, admin, permit('users'), asyncHandler(adminController.verifyUserEmail));
 router.post('/users/:id/resend-verification', auth, admin, permit('users'), asyncHandler(adminController.resendUserVerificationEmail));
+router.put('/users/:id/password', auth, admin, permit('users'), asyncHandler(adminController.resetUserPassword));
 router.put('/users/:id/ad-limits', auth, admin, permit('userLimits'), asyncHandler(adminController.updateUserAdLimits));
 router.put('/users/:id', auth, admin, permit('users'), asyncHandler(adminController.updateUser));
 router.delete('/users/:id', auth, admin, permit('users'), asyncHandler(adminController.deleteUser));

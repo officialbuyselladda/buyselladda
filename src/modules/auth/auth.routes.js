@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, adminLogin, forgotPassword, resetPassword, changePassword, verifyEmail, verifyEmailOtp, resendVerification } from './auth.controller.js';
+import { register, login, adminLogin, forgotPassword, verifyResetOtp, resetPassword, changePassword, verifyEmail, verifyEmailOtp, resendVerification } from './auth.controller.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import auth from '../../middleware/auth.middleware.js';
 import { authLimiter } from '../../middleware/rateLimiter.js';
@@ -10,6 +10,7 @@ router.post('/register', authLimiter, asyncHandler(register));
 router.post('/login', authLimiter, asyncHandler(login));
 router.post('/admin-login', authLimiter, asyncHandler(adminLogin));
 router.post('/forgot-password', authLimiter, asyncHandler(forgotPassword));
+router.post('/verify-reset-otp', authLimiter, asyncHandler(verifyResetOtp));
 router.get('/verify-email/:token', authLimiter, asyncHandler(verifyEmail));
 router.post('/verify-email-otp', authLimiter, asyncHandler(verifyEmailOtp));
 router.post('/resend-verification', authLimiter, asyncHandler(resendVerification));

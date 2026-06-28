@@ -8,6 +8,10 @@ const mergeConfig = (config = {}) => ({
   preview: { ...defaultAppConfig.preview, ...(config.preview || {}) },
   controls: { ...defaultAppConfig.controls, ...(config.controls || {}) },
   contact: { ...defaultAppConfig.contact, ...(config.contact || {}) },
+  homeLayout: { ...defaultAppConfig.homeLayout, ...(config.homeLayout || {}) },
+  features: { ...defaultAppConfig.features, ...(config.features || {}) },
+  trustSafety: { ...defaultAppConfig.trustSafety, ...(config.trustSafety || {}) },
+  growth: { ...defaultAppConfig.growth, ...(config.growth || {}) },
 });
 
 const getAppConfig = async () => {

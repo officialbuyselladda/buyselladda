@@ -8,6 +8,12 @@ const appUrl = () => (
   || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 
+const logoUrl = () => (
+  process.env.BRAND_LOGO_URL
+  || process.env.LOGO_URL
+  || `${appUrl()}/logo-1.png`
+).trim();
+
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -45,6 +51,7 @@ const baseEmail = ({
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:22px;overflow:hidden">
             <tr>
               <td style="background:#002f34;padding:26px 28px">
+                <img src="${escapeHtml(logoUrl())}" width="116" alt="${appName}" style="display:block;max-width:116px;width:116px;height:auto;margin:0 0 14px" />
                 <div style="font-size:24px;line-height:1;font-weight:900;color:#ffffff">${appName}</div>
                 <div style="margin-top:7px;color:#b8fff9;font-size:13px;font-weight:700">${tagline}</div>
               </td>
@@ -85,17 +92,18 @@ const templates = {
     ctaLabel: 'Open BuySellAdda',
     ctaUrl: appUrl(),
   }),
-  verifyEmail: ({ name, verifyUrl } = {}) => baseEmail({
+  verifyEmail: ({ name, verifyUrl, otp } = {}) => baseEmail({
     preheader: 'Verify your BuySellAdda email address.',
     eyebrow: 'Email verification',
     title: 'Verify your email address',
     body: `
       <p style="margin:0 0 12px">Hi ${escapeHtml(name || 'there')}, thanks for creating your BuySellAdda account.</p>
       <p style="margin:0">Please verify your email before signing in. This keeps marketplace accounts safer for buyers and sellers.</p>
+      ${otp ? `<div style="margin-top:18px;background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:16px;text-align:center"><div style="font-size:12px;font-weight:800;color:#c2410c;text-transform:uppercase;letter-spacing:.08em">Your OTP</div><div style="margin-top:8px;color:#002f34;font-size:30px;font-weight:900;letter-spacing:6px">${escapeHtml(otp)}</div></div>` : ''}
     `,
     ctaLabel: 'Verify Email',
     ctaUrl: verifyUrl,
-    note: 'This verification link is valid for 24 hours. If you did not create this account, you can ignore this email.',
+    note: otp ? 'This OTP is valid for 10 minutes. The verification link is valid for 24 hours.' : 'This verification link is valid for 24 hours. If you did not create this account, you can ignore this email.',
   }),
   loginAlert: ({ name, time, ip } = {}) => baseEmail({
     preheader: 'New login detected on your BuySellAdda account.',
@@ -108,13 +116,14 @@ const templates = {
     `,
     note: 'If this was you, no action is needed. If you do not recognize this login, reset your password immediately.',
   }),
-  passwordReset: (resetUrl) => baseEmail({
+  passwordReset: ({ resetUrl, otp, name } = {}) => baseEmail({
     preheader: 'Reset your BuySellAdda password.',
     eyebrow: 'Password reset',
     title: 'Reset your password',
     body: `
       <p style="margin:0 0 12px">We received a request to reset your BuySellAdda password.</p>
-      <p style="margin:0">Use the button below to create a new password. This secure link is valid for 10 minutes.</p>
+      <p style="margin:0">Enter this OTP in the app or website, then create your new password. This code is valid for 10 minutes.</p>
+      ${otp ? `<div style="margin-top:18px;background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:16px;text-align:center"><div style="font-size:12px;font-weight:800;color:#c2410c;text-transform:uppercase;letter-spacing:.08em">Reset OTP</div><div style="margin-top:8px;color:#002f34;font-size:30px;font-weight:900;letter-spacing:6px">${escapeHtml(otp)}</div></div>` : ''}
     `,
     ctaLabel: 'Reset Password',
     ctaUrl: resetUrl,
