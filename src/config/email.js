@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import templates from '../utils/emailTemplates.js';
 
 dotenv.config();
 
@@ -40,16 +41,19 @@ const verifyEmailTransport = async () => {
   return true;
 };
 
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html, attachments = []) => {
   try {
     const transporter = await createTransporter();
+    const brandedHtml = templates.wrap(html, subject);
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_USER,
       to,
       subject,
-      html,
+      html: brandedHtml,
+      text: templates.text(brandedHtml),
+      ...(attachments.length ? { attachments } : {}),
     };
 
     await transporter.sendMail(mailOptions);

@@ -91,9 +91,9 @@ const createVerificationToken = () => crypto.randomBytes(32).toString('hex');
 const hashVerificationToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const getClientUrl = () => (
-  process.env.CLIENT_URL
+  process.env.WEBSITE_URL
+  || process.env.CLIENT_URL
   || process.env.FRONTEND_URL
-  || process.env.WEBSITE_URL
   || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 
@@ -642,7 +642,7 @@ const getAnalytics = async () => {
 
 const updateUser = async (id, updateData) => {
   const allowed = {};
-  ['name', 'email', 'phone', 'role', 'isBlocked'].forEach((key) => {
+  ['name', 'email', 'phone', 'location', 'role', 'isBlocked'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(updateData, key)) {
       allowed[key] = updateData[key];
     }

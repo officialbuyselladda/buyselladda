@@ -6,9 +6,9 @@ import sendEmail from '../../config/email.js';
 import templates from '../../utils/emailTemplates.js';
 
 const getClientUrl = () => (
-  process.env.CLIENT_URL
+  process.env.WEBSITE_URL
+  || process.env.CLIENT_URL
   || process.env.FRONTEND_URL
-  || process.env.WEBSITE_URL
   || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 

@@ -12,6 +12,7 @@ import notificationRoutes from './modules/notification/notification.routes.js';
 import contentRoutes from './modules/content/content.routes.js';
 import supportRoutes from './modules/support/support.routes.js';
 import appConfigRoutes from './modules/appConfig/appConfig.routes.js';
+import contactRoutes from './modules/contact/contact.routes.js';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/content', contentRoutes);
 router.use('/support', supportRoutes);
 router.use('/app-config', appConfigRoutes);
+router.use('/contact', contactRoutes);
 
 export default router;

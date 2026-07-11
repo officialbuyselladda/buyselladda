@@ -1,5 +1,6 @@
 import Favorite from './favorite.model.js';
 import Product from '../product/product.model.js';
+import User from '../user/user.model.js';
 import { NotFoundError } from '../../utils/errorHandler.js';
 
 const toggleFavorite = async (userId, productId) => {
@@ -26,11 +27,27 @@ const getUserFavorites = async (userId, query = {}) => {
   const skip = (page - 1) * limit;
 
   const filter = { user: userId };
+  if (search) {
+    const matchingProducts = await Product.find({ $text: { $search: search } }).select('_id').lean();
+    const productIds = matchingProducts.map((product) => product._id);
+    if (productIds.length === 0) {
+      return {
+        favorites: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          pages: 0
+        }
+      };
+    }
+    filter.product = { $in: productIds };
+  }
+
   const favorites = await Favorite.find(filter)
     .populate({
       path: 'product',
-      match: search ? { $text: { $search: search } } : {},
-      select: 'title description price images category status locationCoords isBoosted createdAt',
+      select: 'title description price images category condition status location locationCoords isBoosted createdAt views',
       populate: { path: 'user', select: 'name avatar phone' }
     })
     .sort('-createdAt')
@@ -41,7 +58,7 @@ const getUserFavorites = async (userId, query = {}) => {
   // Filter out null products (deleted)
   const validFavorites = favorites.filter(f => f.product);
 
-  const total = await Favorite.countDocuments({ user: userId });
+  const total = await Favorite.countDocuments(filter);
 
   return {
     favorites: validFavorites,
@@ -58,42 +75,68 @@ const getFavoriteCount = async (userId) => {
   return await Favorite.countDocuments({ user: userId });
 };
 
-// Admin: List all favorites with pagination
 const listFavoritesAdmin = async ({ page = 1, limit = 10, search, userId }) => {
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 10, 100);
   const skip = (pageNum - 1) * limitNum;
-  
+  const term = String(search || '').trim();
   const filter = {};
   if (userId) filter.user = userId;
-  
-  const favorites = await Favorite.find(filter)
-    .populate({
-      path: 'user',
-      select: 'name email avatar'
-    })
-    .populate({
-      path: 'product',
-      select: 'title description price images status category',
-      match: search ? { 
+
+  if (term) {
+    const [matchingProducts, matchingUsers] = await Promise.all([
+      Product.find({
         $or: [
-          { title: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
-        ]
-      } : {}
-    })
+          { title: { $regex: term, $options: 'i' } },
+          { description: { $regex: term, $options: 'i' } },
+          { category: { $regex: term, $options: 'i' } },
+        ],
+      }).select('_id').lean(),
+      User.find({
+        $or: [
+          { name: { $regex: term, $options: 'i' } },
+          { email: { $regex: term, $options: 'i' } },
+        ],
+      }).select('_id').lean(),
+    ]);
+
+    const productIds = matchingProducts.map((product) => product._id);
+    const userIds = matchingUsers.map((user) => user._id);
+    filter.$or = [
+      ...(productIds.length ? [{ product: { $in: productIds } }] : []),
+      ...(userIds.length ? [{ user: { $in: userIds } }] : []),
+    ];
+
+    if (filter.$or.length === 0) {
+      return {
+        favorites: [],
+        total: 0,
+        page: pageNum,
+        limit: limitNum,
+        pages: 0,
+      };
+    }
+  }
+
+  const [favorites, total] = await Promise.all([
+    Favorite.find(filter)
+      .populate({
+        path: 'user',
+        select: 'name email avatar'
+      })
+      .populate({
+        path: 'product',
+        select: 'title description price images status category views createdAt'
+      })
     .sort('-createdAt')
     .skip(skip)
     .limit(limitNum)
-    .lean();
-  
-  // Filter out null products
-  const validFavorites = favorites.filter(f => f.product);
-  
-  const total = await Favorite.countDocuments(filter);
-  
+      .lean(),
+    Favorite.countDocuments(filter),
+  ]);
+
   return {
-    favorites: validFavorites,
+    favorites: favorites.filter(f => f.product && f.user),
     total,
     page: pageNum,
     limit: limitNum,

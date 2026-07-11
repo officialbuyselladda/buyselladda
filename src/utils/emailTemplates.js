@@ -2,9 +2,9 @@ const appName = 'BuySellAdda';
 const tagline = 'Har Deal, Ek Nayi Shuruaat';
 
 const appUrl = () => (
-  process.env.CLIENT_URL
+  process.env.WEBSITE_URL
+  || process.env.CLIENT_URL
   || process.env.FRONTEND_URL
-  || process.env.WEBSITE_URL
   || 'https://buyselladda.com'
 ).replace(/\/$/, '');
 
@@ -22,12 +22,36 @@ const escapeHtml = (value = '') => String(value)
   .replace(/'/g, '&#039;');
 
 const button = (label, url) => `
-  <a href="${escapeHtml(url)}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:12px;font-weight:800">
+  <a href="${escapeHtml(url)}" style="display:inline-block;background:#ff7a00;color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:10px;font-weight:800">
     ${escapeHtml(label)}
   </a>
 `;
 
-const baseEmail = ({
+const isBrandedEmail = (html = '') => String(html).includes('BUYSELLADDA_EMAIL_TEMPLATE');
+
+const normalizeBody = (body = '') => {
+  const content = String(body || '').trim();
+  if (!content) return '<p style="margin:0">You have a new update from BuySellAdda.</p>';
+  return content;
+};
+
+const stripHtml = (html = '') => String(html)
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/p>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#039;/g, "'")
+  .replace(/[ \t]+/g, ' ')
+  .replace(/\n\s+/g, '\n')
+  .trim();
+
+export const baseEmail = ({
   preheader = '',
   eyebrow = appName,
   title,
@@ -41,34 +65,45 @@ const baseEmail = ({
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>${escapeHtml(title)}</title>
+    <title>${escapeHtml(title || appName)}</title>
   </head>
-  <body style="margin:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
+  <body style="margin:0;background:#f5f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827">
+    <!-- BUYSELLADDA_EMAIL_TEMPLATE -->
     <div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f8fb;padding:28px 12px">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:28px 12px">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:22px;overflow:hidden">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden;box-shadow:0 16px 40px rgba(15,23,42,.08)">
             <tr>
-              <td style="background:#002f34;padding:26px 28px">
-                <img src="${escapeHtml(logoUrl())}" width="116" alt="${appName}" style="display:block;max-width:116px;width:116px;height:auto;margin:0 0 14px" />
-                <div style="font-size:24px;line-height:1;font-weight:900;color:#ffffff">${appName}</div>
-                <div style="margin-top:7px;color:#b8fff9;font-size:13px;font-weight:700">${tagline}</div>
+              <td style="background:#ffffff;padding:24px 28px;border-bottom:4px solid #ff7a00">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="vertical-align:middle">
+                      <img src="${escapeHtml(logoUrl())}" width="118" alt="${appName}" style="display:block;max-width:118px;width:118px;height:auto" />
+                    </td>
+                    <td align="right" style="vertical-align:middle">
+                      <div style="font-size:22px;line-height:1;font-weight:900;color:#1354d8">${appName}</div>
+                      <div style="margin-top:7px;color:#168b2f;font-size:13px;font-weight:800">${tagline}</div>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
-              <td style="padding:30px 28px 10px">
-                <div style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800">
+              <td style="padding:30px 28px 12px">
+                <div style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;letter-spacing:.02em">
                   ${escapeHtml(eyebrow)}
                 </div>
-                <h1 style="margin:18px 0 10px;color:#002f34;font-size:28px;line-height:1.18;font-weight:900">${escapeHtml(title)}</h1>
-                <div style="color:#4b5563;font-size:15px;line-height:1.7">${body}</div>
+                <h1 style="margin:18px 0 10px;color:#111827;font-size:28px;line-height:1.18;font-weight:900">${escapeHtml(title || appName)}</h1>
+                <div style="width:52px;height:4px;background:linear-gradient(90deg,#1354d8,#ff7a00,#168b2f);border-radius:999px;margin:0 0 18px"></div>
+                <div style="color:#4b5563;font-size:15px;line-height:1.7">${normalizeBody(body)}</div>
                 ${ctaLabel && ctaUrl ? `<div style="margin-top:24px">${button(ctaLabel, ctaUrl)}</div>` : ''}
                 ${note ? `<div style="margin-top:22px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;color:#64748b;font-size:13px;line-height:1.55">${note}</div>` : ''}
               </td>
             </tr>
             <tr>
               <td style="padding:20px 28px 28px;color:#94a3b8;font-size:12px;line-height:1.6">
+                <div style="height:1px;background:#e5e7eb;margin-bottom:16px"></div>
                 This email was sent by BuySellAdda. For your safety, never share your password or OTP with anyone.
               </td>
             </tr>
@@ -79,6 +114,21 @@ const baseEmail = ({
   </body>
 </html>
 `;
+
+export const wrapEmailHtml = (html, subject = appName) => {
+  if (isBrandedEmail(html)) return html;
+  return baseEmail({
+    preheader: subject,
+    eyebrow: 'BuySellAdda update',
+    title: subject || 'BuySellAdda update',
+    body: html,
+  });
+};
+
+export const htmlToText = (html = '') => {
+  const text = stripHtml(html);
+  return text || `${appName}\n${tagline}`;
+};
 
 const templates = {
   welcome: (name) => baseEmail({
@@ -178,6 +228,9 @@ const templates = {
     ctaLabel: 'Open Chat',
     ctaUrl: `${appUrl()}/chats`,
   }),
+  custom: baseEmail,
+  wrap: wrapEmailHtml,
+  text: htmlToText,
 };
 
 export default templates;
