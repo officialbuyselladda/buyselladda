@@ -432,7 +432,7 @@ export const getProducts = async (query) => {
     }
 
     products = await findQuery
-      .select('title price images category createdAt isBoosted user location')
+      .select('title price images category createdAt isBoosted user location locationCoords')
       .populate('user', 'name avatar')
       .skip(cursor ? 0 : skip)
       .limit(limit + 1);
@@ -560,7 +560,7 @@ export const getMyProducts = async (userId, query = {}) => {
   }
 
   let products = await Product.find(filter)
-    .select('title description price images category condition createdAt updatedAt status views isBoosted user location')
+    .select('title description price images category condition createdAt updatedAt status views isBoosted user location locationCoords')
     .populate('user', 'name avatar')
     .sort({ _id: -1 })
     .skip(cursor ? 0 : skip)
