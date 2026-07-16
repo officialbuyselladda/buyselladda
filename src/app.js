@@ -10,12 +10,33 @@ import envConfig from './config/env.js';
 const app = express();
 app.set('etag', false);
 
-// Dynamic CORS origin for production
-const isProduction = process.env.NODE_ENV === 'production';
-// For VPS, allow dynamic origins or use environment variable
-const allowedOrigins = isProduction 
-  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://buyselladda.com', 'https://www.buyselladda.com'])
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://72.60.102.36:5173', 'http://72.60.102.36'];
+const defaultAllowedOrigins = [
+  'https://buyselladda.com',
+  'https://www.buyselladda.com',
+  'http://buyselladda.com',
+  'http://www.buyselladda.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+  'http://72.60.102.36',
+  'http://72.60.102.36:5173',
+  'http://72.60.102.36:5003',
+];
+
+const allowedOrigins = new Set([
+  ...defaultAllowedOrigins,
+  ...(process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+]);
+
+const isAllowedOrigin = (origin = '') => {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+};
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -23,12 +44,7 @@ app.use(helmet({
 app.use(morgan('dev'));
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1 && !origin.startsWith('http://72.60.102.36') && !origin.startsWith('https://')) {
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-    return callback(null, true);
+    return callback(null, isAllowedOrigin(origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
