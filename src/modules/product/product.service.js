@@ -360,7 +360,7 @@ export const getProducts = async (query) => {
   if (query.maxPrice !== undefined && query.maxPrice !== null && query.maxPrice !== '') priceFilter.$lte = Number(query.maxPrice);
 
   try {
-    if (!isNaN(lat) && !isNaN(lng)) {
+    if (!isNaN(lat) && !isNaN(lng) && !query.search) {
       // Try geospatial first
       const matchStage = {
         status: 'approved',

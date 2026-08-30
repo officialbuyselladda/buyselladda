@@ -8,6 +8,7 @@ import routes from './routes.js';
 import envConfig from './config/env.js';
 
 const app = express();
+app.set('trust proxy', 1);
 app.set('etag', false);
 
 const defaultAllowedOrigins = [
