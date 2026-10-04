@@ -54,7 +54,69 @@ const templates = [
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const slugify = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-const photoUrl = (keyword, index) => `https://loremflickr.com/900/650/${encodeURIComponent(keyword)}?lock=${100000 + index}`;
+const photoPools = {
+  Electronics: [
+    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9',
+    'https://images.unsplash.com/photo-1517336714739-489689fd1ca8',
+    'https://images.unsplash.com/photo-1541807084-5c52b6b3adef',
+  ],
+  Vehicles: [
+    'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70',
+    'https://images.unsplash.com/photo-1549924231-f129b911e442',
+  ],
+  Property: [
+    'https://images.unsplash.com/photo-1568605114967-8130f3a36994',
+    'https://images.unsplash.com/photo-1570129477492-45c003edd2be',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
+  ],
+  Furniture: [
+    'https://images.unsplash.com/photo-1519710164239-da123dc03ef4',
+    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85',
+    'https://images.unsplash.com/photo-1503602642458-232111445657',
+  ],
+  Fashion: [
+    'https://images.unsplash.com/photo-1512436991641-6745cdb1723f',
+    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b',
+    'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
+  ],
+  Kids: [
+    'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4',
+    'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9',
+    'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088',
+  ],
+  Sports: [
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438',
+    'https://images.unsplash.com/photo-1546519638-68e109498ffc',
+    'https://images.unsplash.com/photo-1535131749006-b7f58c99034b',
+  ],
+  Services: [
+    'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    'https://images.unsplash.com/photo-1621905251918-48416bd8575a',
+    'https://images.unsplash.com/photo-1521791136064-7986c2920216',
+  ],
+  Jobs: [
+    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40',
+    'https://images.unsplash.com/photo-1521737604893-d14cc237f11d',
+    'https://images.unsplash.com/photo-1521791136064-7986c2920216',
+  ],
+  Pets: [
+    'https://images.unsplash.com/photo-1548199973-03cce0bbc87b',
+    'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',
+    'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5',
+  ],
+  Books: [
+    'https://images.unsplash.com/photo-1495446815901-a7297e633e8d',
+    'https://images.unsplash.com/photo-1512820790803-83ca734da794',
+    'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8',
+  ],
+};
+
+const photoUrl = (category, index) => {
+  const pool = photoPools[category] || photoPools.Electronics;
+  const base = pool[index % pool.length];
+  return `${base}?auto=format&fit=crop&w=900&h=650&q=80&sig=${index}`;
+};
 
 const descriptionFor = (title, city) => {
   const openers = [
@@ -102,13 +164,12 @@ const buildProduct = (index, sellers) => {
   const variant = randomFrom(['', 'Good Condition', 'Urgent Sale', 'Single Owner', 'Almost New', 'Best Deal']);
   const title = variant ? `${baseTitle} - ${variant}` : baseTitle;
   const subCategory = randomFrom(template.subCategories);
-  const keyword = baseTitle;
   const seller = sellers[index % sellers.length];
   const [cityName, lng, lat] = city;
   const photoCount = randomInt(1, 3);
   const images = Array.from({ length: photoCount }, (_, imgIndex) => ({
     public_id: `seed-photo-${index + 1}-${imgIndex + 1}`,
-    url: photoUrl(keyword, (index + 1) * 10 + imgIndex),
+    url: photoUrl(template.category, (index + 1) * 10 + imgIndex),
   }));
 
   return {
