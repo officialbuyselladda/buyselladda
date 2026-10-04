@@ -102,7 +102,7 @@ const buildProduct = (index, sellers) => {
   const variant = randomFrom(['', 'Good Condition', 'Urgent Sale', 'Single Owner', 'Almost New', 'Best Deal']);
   const title = variant ? `${baseTitle} - ${variant}` : baseTitle;
   const subCategory = randomFrom(template.subCategories);
-  const keyword = randomFrom(template.keywords);
+  const keyword = baseTitle;
   const seller = sellers[index % sellers.length];
   const [cityName, lng, lat] = city;
   const photoCount = randomInt(1, 3);
