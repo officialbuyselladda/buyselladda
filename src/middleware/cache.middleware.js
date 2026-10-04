@@ -5,7 +5,7 @@ const cache = (ttlSeconds = 60) => async (req, res, next) => {
     return next();
   }
 
-  const key = `cache:${req.originalUrl}`;
+  const key = `cache:${req.get('host') || 'default'}:${req.originalUrl}`;
 
   try {
     const cached = await redis.client.get(key);
