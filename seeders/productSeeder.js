@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,163 +12,156 @@ import User from '../src/modules/user/user.model.js';
 import authService from '../src/modules/auth/auth.service.js';
 
 const SEED_PASSWORD = 'Seller@12345';
-const uploadRoot = path.resolve(__dirname, '../', process.env.UPLOAD_DIR || 'uploads');
-const seedImageDir = path.join(uploadRoot, 'seed');
+const SELLER_COUNT = Number(process.env.SEED_SELLER_COUNT) || 80;
+const PRODUCT_COUNT = Number(process.env.SEED_PRODUCT_COUNT) || 5200;
+const BATCH_SIZE = 500;
 
-const sellers = [
-  { name: 'Rahul Sharma', email: 'rahul.sharma.bsa@gmail.com', location: 'Delhi' },
-  { name: 'Neha Verma', email: 'neha.verma.deals@gmail.com', location: 'Mumbai' },
-  { name: 'Amit Patel', email: 'amit.patel.market@gmail.com', location: 'Ahmedabad' },
-  { name: 'Pooja Singh', email: 'pooja.singh.home@gmail.com', location: 'Lucknow' },
-  { name: 'Karan Mehta', email: 'karan.mehta.sell@gmail.com', location: 'Pune' },
-  { name: 'Simran Kaur', email: 'simran.kaur.bazaar@gmail.com', location: 'Chandigarh' },
+const firstNames = ['Rahul', 'Neha', 'Amit', 'Pooja', 'Karan', 'Simran', 'Vikas', 'Riya', 'Aman', 'Priya', 'Nikhil', 'Anjali', 'Sandeep', 'Komal', 'Rohit', 'Sakshi', 'Mohit', 'Divya', 'Arjun', 'Kavita'];
+const lastNames = ['Sharma', 'Verma', 'Patel', 'Singh', 'Mehta', 'Kaur', 'Gupta', 'Yadav', 'Jain', 'Khan', 'Malhotra', 'Reddy', 'Iyer', 'Chauhan', 'Bansal', 'Nair', 'Agarwal', 'Kapoor', 'Joshi', 'Rao'];
+
+const cities = [
+  ['Delhi', 77.1025, 28.7041],
+  ['Mumbai', 72.8777, 19.0760],
+  ['Bangalore', 77.5946, 12.9716],
+  ['Hyderabad', 78.4867, 17.3850],
+  ['Pune', 73.8567, 18.5204],
+  ['Jaipur', 75.7873, 26.9124],
+  ['Lucknow', 80.9462, 26.8467],
+  ['Ahmedabad', 72.5714, 23.0225],
+  ['Chandigarh', 76.7794, 30.7333],
+  ['Indore', 75.8577, 22.7196],
+  ['Bhopal', 77.4126, 23.2599],
+  ['Surat', 72.8311, 21.1702],
+  ['Nagpur', 79.0882, 21.1458],
+  ['Noida', 77.3910, 28.5355],
+  ['Gurgaon', 77.0266, 28.4595],
 ];
 
-const cityCoords = {
-  Delhi: [77.1025, 28.7041],
-  Mumbai: [72.8777, 19.0760],
-  Ahmedabad: [72.5714, 23.0225],
-  Lucknow: [80.9462, 26.8467],
-  Pune: [73.8567, 18.5204],
-  Chandigarh: [76.7794, 30.7333],
-  Jaipur: [75.7873, 26.9124],
-  Bangalore: [77.5946, 12.9716],
-  Hyderabad: [78.4867, 17.3850],
-};
-
-const listings = [
-  ['iPhone 13 128GB Blue', 'Electronics', 'Mobiles', 38500, 'Used', 'Battery health 87%, bill aur box available. Phone daily use me tha, koi major scratch nahi hai. Genuine buyer aaye, thoda negotiate ho jayega.', 'Delhi'],
-  ['Samsung 43 inch Smart TV', 'Electronics', 'TVs', 21500, 'Used', 'Netflix YouTube sab smooth chal raha hai. Panel clean hai aur remote original hai. Naya TV upgrade kiya hai isliye sell kar raha hoon.', 'Mumbai'],
-  ['HP Pavilion i5 Laptop', 'Electronics', 'Laptops', 29500, 'Used', 'Office aur study ke liye best hai. 8GB RAM, 512GB SSD, charger included. Keyboard aur display bilkul sahi working me hain.', 'Pune'],
-  ['Activa 6G 2021 model', 'Vehicles', 'Scooters', 58500, 'Used', 'Single owner scooter hai, insurance valid hai. Mileage achha milta hai, service time se karayi hai. Local transfer possible.', 'Ahmedabad'],
-  ['Royal Enfield Classic 350', 'Vehicles', 'Motorcycles', 142000, 'Used', 'Bike well maintained hai, silencer stock hai. Long ride ke liye comfortable. RC insurance clear, test ride serious buyer ko milegi.', 'Chandigarh'],
-  ['Maruti Swift VXI 2018', 'Vehicles', 'Cars', 425000, 'Used', 'Family car hai, non accidental. AC chilling, tyres recently changed. Documents clear hain, direct owner deal.', 'Jaipur'],
-  ['2BHK Flat for Rent', 'Property', 'Apartments', 18500, 'Used', 'Semi furnished flat, market aur metro paas me hai. Family ya working professionals ke liye suitable. Brokerage nahi, direct owner.', 'Delhi'],
-  ['Main Road Shop Space', 'Property', 'Shops', 32000, 'Used', 'Ground floor shop hai with shutter. Footfall achha hai, cafe/mobile/accessories ke liye perfect location.', 'Lucknow'],
-  ['Wooden Queen Size Bed', 'Furniture', 'Beds', 12500, 'Used', 'Strong sheesham wood bed with storage. Mattress optional hai. Shifting ki wajah se urgent sale.', 'Mumbai'],
-  ['Dining Table 4 Chairs', 'Furniture', 'Dining', 8500, 'Used', 'Compact dining set, normal use marks hain but structure strong hai. Small family ke liye perfect.', 'Pune'],
-  ['Branded Office Chair', 'Furniture', 'Office Furniture', 4200, 'Used', 'Height adjustable chair, cushion comfortable hai. Work from home setup ke liye good option.', 'Bangalore'],
-  ['Women Saree Collection', 'Fashion', 'Women Clothing', 1800, 'New', 'Party wear sarees available, multiple colours. Boutique stock hai, quality achhi hai. Bulk lene par discount.', 'Lucknow'],
-  ['Men Leather Jacket', 'Fashion', 'Men Clothing', 3200, 'Used', 'Winter jacket XL size, sirf 2-3 baar pehni hai. Condition almost new jaisi hai.', 'Delhi'],
-  ['Kids Study Table', 'Kids', 'Kids Furniture', 2500, 'Used', 'Children ke study ke liye table with chair. Height comfortable hai, stickers lage hain but usable condition achhi hai.', 'Chandigarh'],
-  ['Baby Stroller Foldable', 'Kids', 'Baby Gear', 4800, 'Used', 'Foldable stroller, wheels smooth hain. 6 months se 3 years tak use ho sakta hai. Clean and ready to use.', 'Mumbai'],
-  ['Treadmill for Home', 'Sports', 'Fitness', 18500, 'Used', 'Home use treadmill hai, motor smooth hai. Display working, speed modes proper. Pickup buyer ko arrange karna hoga.', 'Hyderabad'],
-  ['Guitar Yamaha F310', 'Hobbies', 'Musical Instruments', 7200, 'Used', 'Acoustic guitar with cover. Sound warm hai, beginners aur intermediate dono ke liye good.', 'Pune'],
-  ['AC Repair Service', 'Services', 'Home Services', 499, 'New', 'Split/window AC service available. Gas filling, cleaning, installation sab ka kaam hota hai. Same day visit possible.', 'Delhi'],
-  ['Home Deep Cleaning', 'Services', 'Cleaning', 1499, 'New', 'Kitchen, bathroom, sofa cleaning package available. Trained staff aur proper chemicals use hote hain.', 'Bangalore'],
-  ['Delivery Executive Job', 'Jobs', 'Delivery', 22000, 'New', 'Full time delivery boy required. Bike aur smartphone hona chahiye. Salary plus incentive, joining immediate.', 'Mumbai'],
-  ['Telecaller Required', 'Jobs', 'Sales', 16000, 'New', 'Hindi English basic communication chahiye. Freshers apply kar sakte hain. Office timing 10 to 6.', 'Lucknow'],
-  ['Indie Puppy Adoption', 'Pets', 'Dogs', 0, 'Used', 'Healthy indie puppy adoption ke liye available. Sirf caring family contact kare. Vaccination guidance de denge.', 'Ahmedabad'],
-  ['Aquarium with Filter', 'Pets', 'Aquarium', 3500, 'Used', '2 feet aquarium hai filter aur light ke saath. Clean condition me hai, shifting ke karan sell.', 'Chandigarh'],
-  ['JEE Books Full Set', 'Books', 'Education', 2200, 'Used', 'Physics chemistry maths books ka complete set. Notes bhi included hain. Students ke liye useful material.', 'Jaipur'],
+const templates = [
+  { category: 'Electronics', subCategories: ['Mobiles', 'Laptops', 'TVs', 'Cameras', 'Speakers', 'Smart Watches'], items: ['iPhone 13 128GB', 'Samsung Galaxy S22', 'OnePlus Nord CE', 'MacBook Air M1', 'HP Pavilion i5 Laptop', 'Lenovo ThinkPad', 'Sony Bravia 43 inch TV', 'Canon DSLR Camera', 'JBL Bluetooth Speaker', 'Apple Watch SE'], price: [2500, 95000], keywords: ['smartphone', 'laptop', 'television', 'camera', 'speaker', 'smartwatch'] },
+  { category: 'Vehicles', subCategories: ['Cars', 'Motorcycles', 'Scooters', 'Bicycles', 'Commercial Vehicles'], items: ['Maruti Swift VXI', 'Honda City Petrol', 'Hyundai i20 Sportz', 'Royal Enfield Classic 350', 'Yamaha R15 V3', 'Honda Activa 6G', 'TVS Jupiter', 'Hero Splendor Plus', 'Firefox Gear Cycle', 'Tata Ace Mini Truck'], price: [12000, 850000], keywords: ['car', 'motorcycle', 'scooter', 'bicycle', 'vehicle'] },
+  { category: 'Property', subCategories: ['Apartments', 'Rooms', 'Shops', 'Office Space', 'Plots'], items: ['2BHK Flat for Rent', '1RK Room Near Metro', 'Main Road Shop Space', 'Small Office Cabin', 'Residential Plot', 'PG Room with Food', 'Warehouse Space', 'Studio Apartment', 'Independent Floor', 'Commercial Basement'], price: [4500, 3500000], keywords: ['apartment', 'house interior', 'shop', 'office space', 'real estate'] },
+  { category: 'Furniture', subCategories: ['Beds', 'Sofas', 'Tables', 'Chairs', 'Wardrobes'], items: ['Queen Size Bed with Storage', 'L Shape Sofa Set', 'Dining Table 4 Chairs', 'Ergonomic Office Chair', 'Wooden Wardrobe', 'Study Table', 'Center Table', 'Recliner Chair', 'Bookshelf', 'Shoe Rack'], price: [800, 65000], keywords: ['bed furniture', 'sofa', 'dining table', 'office chair', 'wardrobe'] },
+  { category: 'Fashion', subCategories: ['Women Clothing', 'Men Clothing', 'Shoes', 'Watches', 'Bags'], items: ['Party Wear Saree', 'Lehenga Set', 'Men Leather Jacket', 'Nike Running Shoes', 'Fossil Watch', 'Bridal Dupatta', 'Office Blazer', 'Handbag Combo', 'Kids Ethnic Dress', 'Ray-Ban Sunglasses'], price: [250, 25000], keywords: ['saree', 'jacket', 'shoes', 'watch', 'handbag'] },
+  { category: 'Kids', subCategories: ['Toys', 'Baby Gear', 'Kids Furniture', 'Books', 'Clothes'], items: ['Baby Stroller Foldable', 'Kids Study Table', 'Remote Control Car', 'Baby Walker', 'School Books Set', 'Kids Bicycle', 'Toy Kitchen Set', 'Baby Cot', 'Soft Toys Bundle', 'Kids Winter Jacket'], price: [200, 18000], keywords: ['baby stroller', 'kids table', 'toy car', 'baby walker', 'kids bicycle'] },
+  { category: 'Sports', subCategories: ['Fitness', 'Cricket', 'Cycling', 'Football', 'Outdoor'], items: ['Home Treadmill', 'Cricket Bat English Willow', 'Dumbbell Set 20kg', 'Football Stud Shoes', 'Exercise Cycle', 'Badminton Racket Pair', 'Yoga Mat Combo', 'Gym Bench', 'Skating Shoes', 'Camping Tent'], price: [300, 55000], keywords: ['treadmill', 'cricket bat', 'dumbbells', 'football shoes', 'exercise bike'] },
+  { category: 'Services', subCategories: ['Home Services', 'Cleaning', 'Repair', 'Tutors', 'Events'], items: ['AC Repair Service', 'Home Deep Cleaning', 'Laptop Repair', 'Maths Home Tutor', 'Wedding Photographer', 'Plumber on Call', 'Electrician Service', 'Packers and Movers', 'Interior Painting', 'Sofa Cleaning'], price: [199, 45000], keywords: ['air conditioner repair', 'home cleaning', 'laptop repair', 'tutor', 'photographer'] },
+  { category: 'Jobs', subCategories: ['Delivery', 'Sales', 'Office', 'Part Time', 'Hospitality'], items: ['Delivery Executive Job', 'Telecaller Required', 'Office Assistant', 'Sales Executive', 'Restaurant Helper', 'Data Entry Operator', 'Receptionist Job', 'Driver Required', 'Part Time Tutor', 'Store Manager'], price: [8000, 65000], keywords: ['delivery job', 'call center', 'office work', 'sales job', 'restaurant staff'] },
+  { category: 'Pets', subCategories: ['Dogs', 'Cats', 'Fish', 'Birds', 'Pet Accessories'], items: ['Indie Puppy Adoption', 'Persian Cat Kitten', 'Aquarium with Filter', 'Love Birds Pair', 'Dog Crate Large Size', 'Cat Tree', 'Fish Tank Accessories', 'Pet Carrier Bag', 'Labrador Puppy', 'Bird Cage'], price: [0, 45000], keywords: ['puppy', 'kitten', 'aquarium', 'love birds', 'pet carrier'] },
+  { category: 'Books', subCategories: ['Education', 'Competitive Exams', 'Novels', 'Comics', 'Stationery'], items: ['JEE Books Full Set', 'NEET Study Material', 'UPSC Books Combo', 'Harry Potter Set', 'School Books Class 10', 'Accounting Books', 'NCERT Full Set', 'Comics Bundle', 'Engineering Books', 'Drawing Stationery Kit'], price: [100, 12000], keywords: ['study books', 'exam books', 'novels', 'school books', 'stationery'] },
 ];
 
-const slugify = (value) =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const slugify = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const photoUrl = (keyword, index) => `https://loremflickr.com/900/650/${encodeURIComponent(keyword)}?lock=${100000 + index}`;
 
-const colorFor = (category) => {
-  const colors = {
-    Electronics: ['#1d4ed8', '#dbeafe'],
-    Vehicles: ['#b91c1c', '#fee2e2'],
-    Property: ['#047857', '#d1fae5'],
-    Furniture: ['#92400e', '#fef3c7'],
-    Fashion: ['#be185d', '#fce7f3'],
-    Kids: ['#7c3aed', '#ede9fe'],
-    Sports: ['#15803d', '#dcfce7'],
-    Hobbies: ['#4338ca', '#e0e7ff'],
-    Services: ['#0369a1', '#e0f2fe'],
-    Jobs: ['#4d7c0f', '#ecfccb'],
-    Pets: ['#a16207', '#fef9c3'],
-    Books: ['#6d28d9', '#f3e8ff'],
-  };
-  return colors[category] || ['#334155', '#f1f5f9'];
+const descriptionFor = (title, city) => {
+  const openers = [
+    'Condition kaafi achhi hai, daily use me koi issue nahi.',
+    'Ghar ka personal item hai, dealer listing nahi.',
+    'Well maintained product hai, serious buyer ko details share kar dunga.',
+    'Urgent sale hai kyunki upgrade/shifting plan chal raha hai.',
+    'Original photos aur details chat par mil jayengi.',
+  ];
+  const details = [
+    'Minor use marks ho sakte hain but overall product clean hai.',
+    'Price thoda negotiable hai, please low offer mat karna.',
+    'Pickup preferred hai, nearby buyer ke liye easy rahega.',
+    'Bill/box/accessories available honge to listing ke hisab se de dunga.',
+    'Same day deal possible hai agar buyer genuine ho.',
+  ];
+  return `${title} available in ${city}. ${randomFrom(openers)} ${randomFrom(details)} OLX style direct owner deal, chat karke visit/test kar sakte ho.`;
 };
 
-const createSeedImage = (listing, index) => {
-  fs.mkdirSync(seedImageDir, { recursive: true });
-  const [title, category] = listing;
-  const filename = `${String(index + 1).padStart(2, '0')}-${slugify(title)}.svg`;
-  const filePath = path.join(seedImageDir, filename);
-  const [primary, background] = colorFor(category);
-  const escapedTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
-  <rect width="900" height="650" fill="${background}"/>
-  <rect x="70" y="70" width="760" height="510" rx="28" fill="#ffffff" stroke="${primary}" stroke-width="8"/>
-  <circle cx="740" cy="160" r="58" fill="${primary}" opacity="0.12"/>
-  <circle cx="170" cy="500" r="76" fill="${primary}" opacity="0.10"/>
-  <text x="450" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="52" font-weight="700" fill="${primary}">${escapedTitle}</text>
-  <text x="450" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#334155">${category} listing</text>
-  <text x="450" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#64748b">BuySellAdda local photo</text>
-</svg>`;
-  fs.writeFileSync(filePath, svg);
-  return `/uploads/seed/${filename}`;
-};
+const makeSellers = async () => {
+  const emails = Array.from({ length: SELLER_COUNT }, (_, i) => `seller${String(i + 1).padStart(3, '0')}@seed.buyselladda.local`);
+  await User.deleteMany({ email: { $in: emails } });
 
-const ensureSellers = async () => {
-  await User.deleteMany({ email: { $in: sellers.map((seller) => seller.email) } });
-  const created = [];
-
-  for (const seller of sellers) {
+  const sellers = [];
+  for (let i = 0; i < SELLER_COUNT; i += 1) {
+    const name = `${randomFrom(firstNames)} ${randomFrom(lastNames)}`;
     const { user } = await authService.register({
-      name: seller.name,
-      email: seller.email,
+      name,
+      email: emails[i],
       password: SEED_PASSWORD,
+      phone: `9${randomInt(100000000, 999999999)}`,
     });
-    const userDoc = typeof user.toObject === 'function' ? user.toObject() : user;
-    created.push({ ...userDoc, location: seller.location });
+    user.isEmailVerified = true;
+    await user.save({ validateBeforeSave: false });
+    sellers.push(user);
   }
 
-  return created;
+  return sellers;
 };
 
-const buildProducts = (users) => listings.map((listing, index) => {
-  const [title, category, subCategory, price, condition, description, location] = listing;
-  const seller = users[index % users.length];
-  const coordinates = cityCoords[location] || cityCoords.Delhi;
-  const imageUrl = createSeedImage(listing, index);
+const buildProduct = (index, sellers) => {
+  const template = templates[index % templates.length];
+  const city = cities[index % cities.length];
+  const baseTitle = randomFrom(template.items);
+  const variant = randomFrom(['', 'Good Condition', 'Urgent Sale', 'Single Owner', 'Almost New', 'Best Deal']);
+  const title = variant ? `${baseTitle} - ${variant}` : baseTitle;
+  const subCategory = randomFrom(template.subCategories);
+  const keyword = randomFrom(template.keywords);
+  const seller = sellers[index % sellers.length];
+  const [cityName, lng, lat] = city;
+  const photoCount = randomInt(1, 3);
+  const images = Array.from({ length: photoCount }, (_, imgIndex) => ({
+    public_id: `seed-photo-${index + 1}-${imgIndex + 1}`,
+    url: photoUrl(keyword, (index + 1) * 10 + imgIndex),
+  }));
 
   return {
     title,
-    description,
-    price,
-    category,
+    description: descriptionFor(baseTitle, cityName),
+    price: randomInt(template.price[0], template.price[1]),
+    category: template.category,
     subCategory,
-    condition,
-    images: [{ public_id: imageUrl.replace('/uploads/', ''), url: imageUrl }],
-    location,
+    condition: Math.random() < 0.22 ? 'New' : 'Used',
+    images,
+    location: cityName,
     locationCoords: {
       type: 'Point',
-      coordinates,
+      coordinates: [lng + (Math.random() - 0.5) * 0.08, lat + (Math.random() - 0.5) * 0.08],
     },
     user: seller._id,
-    views: 20 + index * 7,
+    views: randomInt(0, 2400),
+    isBoosted: Math.random() < 0.08,
     status: 'approved',
     approvedAt: new Date(),
     approvalSource: 'auto',
-    slug: `${slugify(title)}-${index + 1}`,
-    contentHash: `seed-genuine-${index + 1}`,
+    slug: `${slugify(baseTitle)}-${index + 1}-${Date.now().toString(36)}`,
+    contentHash: `seed-realistic-${index + 1}`,
     searchVector: [],
   };
-});
+};
+
+const insertInBatches = async (docs) => {
+  let inserted = 0;
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const batch = docs.slice(i, i + BATCH_SIZE);
+    await Product.insertMany(batch, { ordered: false });
+    inserted += batch.length;
+    console.log(`Inserted products: ${inserted}/${docs.length}`);
+  }
+};
 
 const seedProducts = async () => {
   try {
     console.log('Connecting to DB...');
     await connectDB();
 
-    await Product.deleteMany({
-      $or: [
-        { contentHash: { $regex: '^seed-' } },
-        { title: { $regex: '^\\[SEED\\]' } },
-      ],
-    });
-    console.log('Removed old seeded products');
+    await Product.deleteMany({});
+    await User.deleteMany({ email: /@seed\.buyselladda\.local$/ });
+    console.log('Cleared old product mock data');
 
-    const users = await ensureSellers();
-    console.log(`Created seed sellers: ${users.length}`);
+    const sellers = await makeSellers();
+    console.log(`Created seed sellers: ${sellers.length}`);
 
-    const products = await Product.insertMany(buildProducts(users));
-    console.log(`Seeded genuine products: ${products.length}`);
+    const docs = Array.from({ length: PRODUCT_COUNT }, (_, index) => buildProduct(index, sellers));
+    await insertInBatches(docs);
+
+    console.log(`Seeded realistic products: ${PRODUCT_COUNT}`);
     console.log(`Seed seller password: ${SEED_PASSWORD}`);
     process.exit(0);
   } catch (error) {
