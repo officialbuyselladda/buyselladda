@@ -151,7 +151,7 @@ const seedProducts = async () => {
     console.log('Connecting to DB...');
     await connectDB();
 
-    await Product.deleteMany({});
+    await Product.deleteMany({ contentHash: { $regex: '^seed-' } });
     await User.deleteMany({ email: /@seed\.buyselladda\.local$/ });
     console.log('Cleared old product mock data');
 
