@@ -43,3 +43,6 @@ build/
 tmp/
 temp/
 
+# Seed script local state
+seeders/.mega-seed-state.json
+
