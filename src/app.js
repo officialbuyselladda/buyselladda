@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 import rateLimiter from './middleware/rateLimiter.js';
 import errorHandler from './middleware/error.middleware.js';
 import routes from './routes.js';
@@ -54,6 +55,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(rateLimiter);
+app.use('/uploads', express.static(path.resolve(process.cwd(), envConfig.UPLOAD_DIR || 'uploads'), {
+  maxAge: '30d',
+  immutable: true,
+}));
 
 // Routes
 app.use('/api', (req, res, next) => {

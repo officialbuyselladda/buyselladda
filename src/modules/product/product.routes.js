@@ -6,15 +6,16 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import chatService from '../chat/chat.service.js';
 import { getProduct as getProductById } from './product.service.js';
 import sendResponse from '../../utils/responseHandler.js';
+import cache from '../../middleware/cache.middleware.js';
 
 const router = Router();
 
-router.get('/', asyncHandler(productController.getProducts));
-router.get('/recommendations', asyncHandler(productController.getRecommendations));
+router.get('/', cache(45), asyncHandler(productController.getProducts));
+router.get('/recommendations', cache(60), asyncHandler(productController.getRecommendations));
 router.get('/my-products', auth, asyncHandler(productController.getMyProducts));
 router.get('/posting-eligibility', auth, asyncHandler(productController.getPostingEligibility));
 router.get('/my-products/:id', auth, asyncHandler(productController.getMyProduct));
-router.get('/:id', asyncHandler(productController.getProduct));
+router.get('/:id', cache(60), asyncHandler(productController.getProduct));
 
 // Contact product seller - creates chat with seller
 router.post('/:id/contact', auth, asyncHandler(async (req, res) => {

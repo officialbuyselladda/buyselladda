@@ -12,7 +12,7 @@ const uploadImage = asyncHandler(async (req, res) => {
   }
 
   try {
-    const result = await uploadService.uploadImage(req.file.buffer, req.file.originalname);
+    const result = await uploadService.uploadImage(req.file, req);
     return sendResponse(res, {
       success: true,
       statusCode: 200,

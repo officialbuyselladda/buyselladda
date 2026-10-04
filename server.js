@@ -2,6 +2,7 @@ import app from './src/app.js';
 import connectDB from './src/config/db.js';
 import env from './src/config/env.js';
 import initSocket from './src/config/socket.js';
+import redis from './src/config/redis.js';
 import fs from 'fs';
 import path from 'path';
 import { startProductAutoApprovalJob } from './src/jobs/productAutoApproval.job.js';
@@ -28,6 +29,7 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
 }
 
 await connectDB();
+redis.client;
 startProductAutoApprovalJob();
 
 // Start server based on SSL availability
