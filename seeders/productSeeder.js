@@ -110,7 +110,7 @@ const ensureSellers = async () => {
   const created = [];
 
   for (const seller of sellers) {
-    const user = await authService.register({
+    const { user } = await authService.register({
       name: seller.name,
       email: seller.email,
       password: SEED_PASSWORD,
